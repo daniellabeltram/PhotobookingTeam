@@ -102,13 +102,9 @@ export function validateIntake(
   if (has('couples.surpriseProposal') && req('couples.surpriseProposal') && !val('couples.surpriseProposal')) {
     e['couples.surpriseProposal'] = 'Please choose one.';
   }
-  if (has('families.childrenAges')) {
-    const needs = req('families.childrenAges') || Number(a['children']) > 0;
-    if (needs && Number(a['children']) > 0 && !val('families.childrenAges')) {
-      e['families.childrenAges'] = "Please tell us your children's ages.";
-    } else if (tooLong('families.childrenAges')) {
-      e['families.childrenAges'] = `Please keep this under ${maxLength(config, 'families.childrenAges')} characters.`;
-    }
+  // Children's ages are optional (security review): only the length is checked.
+  if (has('families.childrenAges') && tooLong('families.childrenAges')) {
+    e['families.childrenAges'] = `Please keep this under ${maxLength(config, 'families.childrenAges')} characters.`;
   }
   if (has('families.extendedFamily') && req('families.extendedFamily') && !val('families.extendedFamily')) {
     e['families.extendedFamily'] = 'Please choose one.';

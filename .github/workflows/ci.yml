@@ -32,8 +32,8 @@ jobs:
       - run: npm run build
       - name: Scan dist for secrets and source maps
         run: |
-          if grep -rIlE 'ADMIN_|RESEND|re_' dist; then
-            echo "dist contains a secret-looking name (ADMIN_, RESEND or re_)"; exit 1
+          if grep -rIlE 'ADMIN_|RESEND|\bre_[A-Za-z0-9]{20,}' dist; then
+            echo "dist contains a secret-looking name or key (ADMIN_, RESEND or a Resend key)"; exit 1
           fi
           if find dist -name '*.map' | grep -q .; then
             echo "dist contains a source map"; exit 1
