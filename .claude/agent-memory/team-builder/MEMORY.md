@@ -20,3 +20,4 @@ orchestrator, team-builder, product-manager, ux-designer, software-architect, fr
 
 ## Change log
 - 2026-11-25: initial team of 12 agents and 15 skills created.
+- 2026-11-25: software-architect switched fable -> opus: Fable 5.2 requires usage credits on this account (HTTP 429). Check credits before assigning fable.
