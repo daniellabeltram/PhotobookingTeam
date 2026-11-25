@@ -14,7 +14,7 @@ export function apiFor(request: APIRequestContext, baseURL: string): Api {
     const r = await request.fetch(req.url, { method: req.method, headers, data: body, failOnStatusCode: false, maxRedirects: 0 });
     const resHeaders = new Headers();
     r.headersArray().forEach((h) => resHeaders.append(h.name, h.value));
-    return new Response([204, 304].includes(r.status()) ? null : await r.body(), { status: r.status(), headers: resHeaders });
+    return new Response([204, 304].includes(r.status()) ? null : new Uint8Array(await r.body()), { status: r.status(), headers: resHeaders });
   };
   return new Api(t, baseURL);
 }

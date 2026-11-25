@@ -3,7 +3,7 @@
 import "../../helpers/env";
 import { describe, it, expect, beforeEach } from "vitest";
 import { freshApp } from "../../helpers/app";
-import { buildBookingBody, findOverlaps, firstOpenSlot, newKey, type Api } from "../../helpers/builders";
+import { buildBookingBody, findOverlaps, firstOpenSlot, newKey, type Api, type Slot } from "../../helpers/builders";
 import { OTHER_CLIENT } from "../../helpers/seed";
 
 let app: Awaited<ReturnType<typeof freshApp>>;
@@ -62,7 +62,7 @@ describe("concurrent creates", () => {
     expect(couples, "Couples must offer the same start (same window, same grid)").toBeTruthy();
     const [a, b] = await Promise.all([
       app.api().createBooking(buildBookingBody({ type: "portraits", slot })),
-      app.api().createBooking(buildBookingBody({ type: "couples", slot: couples })),
+      app.api().createBooking(buildBookingBody({ type: "couples", slot: couples! })),
     ]);
     expect([a.status, b.status].sort()).toEqual([201, 409]);
   });
@@ -78,7 +78,7 @@ describe("concurrent creates", () => {
   });
 
   it("20 parallel creates over 5 distinct slots keep the invariant: no two active bookings overlap (004 #9)", async () => {
-    const slots = [];
+    const slots: Slot[] = [];
     for (let i = 0; i < 5; i++) slots.push(await firstOpenSlot(api, "portraits", FROM, TO, undefined, i));
     await Promise.all(Array.from({ length: 20 }, (_, i) => app.api().createBooking(buildBookingBody({ type: "portraits", slot: slots[i % 5] }), newKey())));
     const items = await adminList();
@@ -90,7 +90,7 @@ describe("concurrent creates", () => {
   });
 
   it("daily cap holds under concurrency (maxSessionsPerDay)", async () => {
-    const day = (await api.availability("portraits", FROM, TO)).body.data.days.find((d: any) => d.status === "open" && d.slots.length >= 5);
+    const day = (await api.availability("portraits", FROM, TO)).body.data.days.find((d: any) => d.status === "open" && d.slots.length >= 5)!;
     expect(day, "need a day with >= 5 slots").toBeTruthy();
     // Pick 5 slots on that day that do not overlap each other (every other slot with buffers), try them all at once.
     const picks = day.slots.filter((_: any, i: number) => i % 3 === 0).slice(0, 5);
@@ -110,13 +110,13 @@ describe("Holiday Minis race (004 #8)", () => {
     const created = await admin.post("/api/admin/mini-days/2026-12-12/slots", { location: "Phillips Point", theme: "Winter", startTimes: ["08:00", "08:30", "09:00"] });
     expect(created.status).toBe(201);
     const before = (await api.availability("minis", "2026-12-12", "2026-12-12")).body.data.days[0];
-    expect(before.mini.spotsLeft).toBe(3);
+    expect(before.mini!.spotsLeft).toBe(3);
     const slot = before.slots[0];
     expect(slot.miniSlotId).toBeTruthy();
     const rs = await Promise.all([1, 2, 3, 4].map((i) => app.api().createBooking(buildBookingBody({ type: "minis", slot, contact: { email: `fam${i}@example.test` } }), newKey())));
     expect(rs.filter((r) => r.status === 201)).toHaveLength(1);
     expect(rs.filter((r) => r.status === 409)).toHaveLength(3);
     const after = (await api.availability("minis", "2026-12-12", "2026-12-12")).body.data.days[0];
-    expect(after.mini.spotsLeft).toBe(2);
+    expect(after.mini!.spotsLeft).toBe(2);
   });
 });

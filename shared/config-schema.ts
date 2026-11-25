@@ -100,6 +100,7 @@ export const bookingConfigSchema = z
     features: z.strictObject({ portfolioOptOutEnabled: z.boolean() }),
     limits: z.strictObject({
       bookingRateLimit: rateLimit,
+      bookingGlobalLimit: rateLimit,
       availabilityRateLimit: rateLimit,
       loginFailureLimit: rateLimit,
     }),

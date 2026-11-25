@@ -1,6 +1,7 @@
 // Display strings for the booking flow. Times come from the API's ready-made labels (Eastern Time).
 import type { PublicConfig, PublicSessionType, Slot } from '../lib/types';
 import { shortDay, longDay } from '../lib/calendar-math';
+import { renderPolicySummary } from '../../shared/policy-render';
 
 export function durationLabel(min: number): string {
   if (min >= 60 && min % 60 === 0) {
@@ -17,13 +18,11 @@ export function lengthAndPrice(type: PublicSessionType, durationMin?: number | n
 }
 
 export function depositLine(type: PublicSessionType): string {
+  if (type.deposit.cardText) return type.deposit.cardText;
   switch (type.deposit.kind) {
     case 'full': return 'Paid in full to book';
     case 'none': return 'No deposit needed';
-    default:
-      return type.bookingMode === 'request'
-        ? `${type.deposit.text} deposit, due only if Daniella approves`
-        : `${type.deposit.text} deposit holds your date`;
+    default: return `${type.deposit.text} retainer holds your date`;
   }
 }
 
@@ -66,15 +65,15 @@ export function firstName(fullName: string): string {
   return fullName.trim().split(/\s+/)[0] ?? '';
 }
 
-/** Fills {{placeholders}} in the policy summary from the type and policy values. */
-export function renderPolicySummary(config: PublicConfig, type: PublicSessionType): string[] {
-  const values: Record<string, string> = {
+/** Fills the {{placeholders}} in the policy summary from the type and policy values (shared helper). */
+export function policySummaryLines(config: PublicConfig, type: PublicSessionType): string[] {
+  const values: Record<string, string | number> = {
+    ...config.policy.values,
     depositText: type.deposit.text,
-    unpaidHoldHours: String(config.scheduling.unpaidHoldHours),
+    unpaidHoldHours: config.scheduling.unpaidHoldHours,
   };
-  for (const [k, v] of Object.entries(config.policy.values)) values[k] = String(v);
-  const filled = config.policy.summaryTemplate.replace(/\{\{\s*(\w+)\s*\}\}/g, (m, key: string) => values[key] ?? m);
-  return filled.split(/\n+/).map((s) => s.trim()).filter(Boolean);
+  return renderPolicySummary(config.policy.summaryTemplate, values)
+    .split(/\n+/).map((x) => x.trim()).filter(Boolean);
 }
 
 export function documentTitle(step: string): string {

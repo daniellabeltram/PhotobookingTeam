@@ -16,3 +16,11 @@
 
 ## Bug history / flaky areas
 - (dated notes)
+
+## 2026-11-25 Phase A done (code not yet runnable)
+- Written, NOT yet run: `playwright.config.ts` (projects `phone` 375x812 zone LA, `desktop` 1280x800 zone UTC; per-run data dir `.data/e2e/run-<ts>`, no rm needed), `tests/helpers/*`, `e2e/*.e2e.ts` (+support/), `tests/integration/qa/*.test.ts`, `docs/test-plans/001..020 + README`.
+- e2e files are `*.e2e.ts` so vitest never collects them. Orchestrator: CI may drop `--project`, so both projects must pass.
+- Primary concurrency test: `tests/integration/qa/concurrency.test.ts` (twin of docs/operations.md section 6 launch gate).
+- Guesses to verify when code lands: `extra.<typeId>` field names (builders.ts), memory email driver `sent`/`failNext`, `getServices` export, minis id `holiday-minis`, admin UI routes/labels (selectors follow docs/design copy; admin design says no Reschedule button, API has one).
+- Tooling note: shell heredocs containing certain patterns were blocked by the safety check; use the Write tool for files.
+- Open `gap` rows in test plans (mini-days admin rules, list filters/summary, waiting/overdue flags, decline/approve email content, network-fail e2e, tap-target sweep, privacy page checks, idle expiry).

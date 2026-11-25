@@ -275,7 +275,8 @@ describe("lifecycle (007 #1, 009, 013, 020)", () => {
   });
 
   it("email failure does not fail the booking; resend works and flag clears (008 #5, #6)", async () => {
-    const mod: any = await import("../../../netlify/lib/services");
+    const p = "../../../netlify/lib/services";
+    const mod: any = await import(/* @vite-ignore */ p);
     const svc = typeof mod.getServices === "function" ? await mod.getServices() : mod.services;
     if (typeof svc?.email?.failNext !== "function") return expect.soft(typeof svc?.email?.failNext, "memory email driver should expose failNext(n) (ADR 0004)").toBe("function");
     svc.email.failNext(2);

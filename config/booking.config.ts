@@ -228,7 +228,8 @@ const config = {
   },
   features: { portfolioOptOutEnabled: true }, // [PLACEHOLDER] decision pending
   limits: {
-    bookingRateLimit: { max: 5, windowMinutes: 60 }, // [PLACEHOLDER]
+    bookingRateLimit: { max: 5, windowMinutes: 60 }, // [PLACEHOLDER] per visitor
+    bookingGlobalLimit: { max: 20, windowMinutes: 1440 }, // [PLACEHOLDER] site-wide bookings per ET day (email relay guard)
     availabilityRateLimit: { max: 300, windowMinutes: 10 },
     loginFailureLimit: { max: 5, windowMinutes: 10 },
   },

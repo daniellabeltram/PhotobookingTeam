@@ -75,7 +75,8 @@ export function captureLogs() {
 
 /** Sent emails from the memory driver (ADR 0004). Throws a clear message if the shape differs. */
 export async function sentEmails(): Promise<any[]> {
-  const mod: any = await import(/* @vite-ignore */ "../../netlify/lib/services");
+  const p = "../../netlify/lib/services";
+  const mod: any = await import(/* @vite-ignore */ p);
   const svc = typeof mod.getServices === "function" ? await mod.getServices() : mod.services;
   const email = svc?.email;
   const list = email?.sent ?? email?.messages ?? email?.outbox;
