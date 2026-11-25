@@ -16,7 +16,7 @@ Plain version: the site is cheap to run and safe to undo. Every release can be r
 Important: values in `netlify.toml` reach only the build, not the running functions. Every variable below is set in the Netlify UI, and a change takes effect on the next deploy.
 
 ## 2. Environment variables per deploy context
-Set under Site configuration, Environment variables. For each variable, use "Different value for each deploy context" where the table shows different values. Secrets: tick "Contains secret values".
+Set under Site configuration, Environment variables. Never choose "same value for all contexts" for any variable: give each deploy context its own value (or leave it unset where the table says so). For each variable, use "Different value for each deploy context" where the table shows different values. Secrets: tick "Contains secret values".
 
 | Name | Secret | Production | Deploy preview | Branch deploy | Must differ from production? |
 |---|---|---|---|---|---|
@@ -29,7 +29,7 @@ Set under Site configuration, Environment variables. For each variable, use "Dif
 | `ADMIN_EMAIL` | no | Daniella's email | test address | test address | Yes |
 | `ADMIN_PASSWORD_HASH` | yes | her real hash | a different test hash | a different test hash | Yes |
 | `ADMIN_SESSION_SECRET` | yes | own random value | different random value | different random value | Yes |
-| `ADMIN_TOTP_SECRET` | yes | set (recommended) | optional | optional | Yes |
+| `ADMIN_TOTP_SECRET` | yes | **required** (the app refuses to start without it) | optional | optional | Yes |
 | `PUBLIC_BASE_URL` | no | `https://book.daniellabeltram.photography` [PLACEHOLDER domain] | leave unset (falls back to Netlify's `URL`) | leave unset | Yes |
 | `PAYMENT_LINK_OVERRIDE_URL` | no | **not set** | optional test link | optional | Yes |
 | `RATE_LIMIT_DISABLED` | no | **not set** | `1` only while running the concurrency test, then remove | not set | Yes |
@@ -38,15 +38,18 @@ Set under Site configuration, Environment variables. For each variable, use "Dif
 
 `NODE_VERSION=22` is set in `netlify.toml` (build only), so there is nothing to enter in the UI.
 
-Guards (the app fails closed at first use): production must use `netlify-blobs` and `DATA_NAMESPACE=production`; anything else must not use the `production` namespace; a non-production site using `resend` must have `EMAIL_REDIRECT_TO`. Notes: branch deploys share the preview namespace, so test data from different branches mixes there. That is fine for testing.
+Guards (the app fails closed at first use): production must use `netlify-blobs` and `DATA_NAMESPACE=production`; anything else must not use the `production` namespace; a non-production site using `resend` must have `EMAIL_REDIRECT_TO`. Branch deploys are turned off. If they are ever turned on, they share the preview namespace.
 
 Rotating a secret: change it in the Netlify UI, then Deploys, Trigger deploy. Rotating `ADMIN_SESSION_SECRET` signs everyone out.
 
+### Repo visibility and a staging option
+This repository is public. Preview deploys run on code from pull requests, so for stronger protection either make the GitHub repo private, or run previews on a separate staging Netlify site that holds only test values (its own `preview` namespace, test Resend key, test inbox) while the production site builds only from `main`. Both are Daniella's call; the settings above are the minimum.
+
 ## 3. First-time Netlify setup (Daniella does the steps that need her accounts)
-1. Create a Netlify account and turn on two-factor sign-in. Whoever controls this account controls the app.
+1. Create a Netlify account and turn on two-factor sign-in. Do the same on the GitHub account. Whoever controls these accounts controls the app.
 2. Add new project, Import an existing project, pick the GitHub repo. Production branch: `main`. Build command `npm run build`, publish `dist`, functions `netlify/functions` (these come from `netlify.toml`).
-3. Site configuration, Build and deploy: keep Deploy Previews on ("Any pull request against your production branch"). Turn on "Branch deploys" only for `feature/v1` if wanted.
-4. Create a Resend account. Add the domain (or `mail.daniellabeltram.photography`), add the SPF and DKIM records Resend shows at the domain's DNS host, and add a DMARC record (`v=DMARC1; p=none; rua=mailto:<her address>` to start). Create two API keys: one for production, one for previews.
+3. Site configuration, Build and deploy: keep Deploy Previews on ("Any pull request against your production branch"). Set Branch deploys to None (off). Under Deploy Previews, keep untrusted (fork) deploys on "Require approval" and never approve one: a fork's code would run against the preview's secrets.
+4. Create a Resend account. Add the domain (or `mail.daniellabeltram.photography`), add the SPF and DKIM records Resend shows at the domain's DNS host, and add a DMARC record (`v=DMARC1; p=none; rua=mailto:<her address>` to start). Create two API keys with "Sending access" only (not full access): one for production, restricted to the production domain, and one for previews.
 5. Make the admin password hash: open `/admin/password-tool.html` from a preview (it runs in her browser and sends nothing), choose a passphrase of at least 14 characters, copy the hash. Also generate the TOTP secret and add it to her authenticator app.
 6. Enter the variables from section 2 in the Netlify UI. She types the secrets herself. They are never pasted into chat or committed.
 7. Trigger a deploy of a preview first and run the launch gate (section 6). Then, when she approves, merge to `main`.
@@ -61,6 +64,11 @@ Production deploys happen only with Daniella's explicit approval (relayed by the
 - [ ] The ADR 0002 launch gate passed on a preview (first release, and after any change to booking, store or ledger code).
 - [ ] Variables in section 2 match the table (production has no `EMAIL_REDIRECT_TO`, `RATE_LIMIT_DISABLED`, `PAYMENT_LINK_OVERRIDE_URL`).
 - [ ] Any data-shape change keeps working with the previous release (so a rollback is safe).
+- [ ] Netlify: Branch deploys are off, and fork deploys still say "Require approval" (none approved). 2FA is on for Netlify and GitHub.
+- [ ] Every variable has its own value per context (none set as "same for all contexts"). `ADMIN_TOTP_SECRET` is set in production.
+- [ ] Resend keys have sending access only, and the production key is limited to the production domain.
+- [ ] CI contains no `pull_request_target` trigger and no secrets (CI needs none).
+- [ ] CI's dist scan (no `ADMIN_`, `RESEND`, `re_` or source maps in `dist/`) passed.
 - [ ] Daniella approved the release.
 - [ ] Merge to `main`. Watch Deploys until it shows Published.
 - [ ] Production smoke test (section 7).
