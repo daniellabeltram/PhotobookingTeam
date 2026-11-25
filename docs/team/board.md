@@ -6,9 +6,15 @@ Maintained by the `orchestrator`. Status values: todo · doing · review · done
 |---|---|---|---|---|
 | T-001 | Confirm `[PLACEHOLDER]` values in `docs/04-booking-policies.md` (prices, deposits, windows) | Daniella | todo | Decisions checklist at the end of that file |
 | T-002 | Write user stories for the v1 must-haves | product-manager | done | `docs/stories/` 001–019, plus 020 in progress |
-| T-003 | ADRs 0001–0007 (framework, data store, admin auth, email, payments, time, config) | software-architect | doing | `architecture-decisions` skill |
+| T-003 | ADRs 0001–0007 (framework, data store, admin auth, email, payments, time, config) | software-architect | done | `architecture-decisions` skill |
 | T-004 | Booking flow and admin wireframes, copy, tokens | ux-designer | done | `docs/design/`, brand assets still placeholders |
-| T-005 | Netlify site and CI skeleton | devops-engineer | todo | After T-003 (ADR 0001) |
+| T-005 | netlify.toml, CI, .env.example, docs/operations.md | devops-engineer | doing | |
+| T-006 | Back end: scaffold, store, all /api functions, email, admin auth, tests | backend-developer | doing | docs/architecture.md §12 |
+| T-007 | Security design review (auth, secrets, PII, preview isolation) | security-reviewer | doing | |
+| T-008 | Front end: booking flow, admin, password tool | frontend-developer | todo | After T-006 scaffold |
+| T-009 | QA: test plans, e2e, regression suite, sign-off | qa-tester | todo | |
+| T-010 | Code review and final security review | code-reviewer, security-reviewer | todo | |
+| T-011 | README with deploy steps, admin guide, CHANGELOG | technical-writer | todo | |
 
 ## Decisions log
 | Date | Decision | By |
