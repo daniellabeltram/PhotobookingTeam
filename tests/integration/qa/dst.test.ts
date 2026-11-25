@@ -6,10 +6,10 @@ import { freshApp } from "../../helpers/app";
 import { buildBookingBody, firstOpenSlot, type Slot } from "../../helpers/builders";
 import { DST_END_2027, DST_START_2027, DST_START_WEEK, DST_END_WEEK, NOW_BEFORE_DST_END, NOW_BEFORE_DST_START, etDate, etOffsetHours, etTime } from "../../helpers/clock";
 
-async function slotsFor(now: string, type: string, date: string) {
+async function slotsFor(now: string, type: string, date: string, dur?: number) {
   const app = await freshApp({ FAKE_NOW: now });
   const api = app.api();
-  const r = await api.availability(type, date, date);
+  const r = await api.availability(type, date, date, dur);
   expect(r.status).toBe(200);
   return { app, api, day: r.body.data.days[0]! };
 }
@@ -21,7 +21,7 @@ describe.each([
   for (const type of ["portraits", "families", "events"]) {
     it(`${type}: slots are ET wall-clock correct, none in 1:00-3:00 AM, none duplicated, same times as an ordinary day`, async () => {
       const dur = type === "events" ? 120 : undefined;
-      const { api, day } = await slotsFor(now, type, date);
+      const { api, day } = await slotsFor(now, type, date, dur);
       const ordinary = (await api.availability(type, addWeek(date), addWeek(date), dur)).body.data.days[0]!;
       const times: string[] = day.slots.map((s: Slot) => s.localTime);
       expect(new Set(times).size, "no duplicate times").toBe(times.length);

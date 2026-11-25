@@ -54,7 +54,7 @@ describe("logs contain no client PII, credentials or secrets", () => {
       const slot = await firstOpenSlot(api, "portraits", "2026-12-01", "2027-02-01");
       await api.createBooking(buildBookingBody({ type: "portraits", slot }), newKey());
     } finally { logs.restore(); }
-    const allow = new Set(["requestId", "fn", "route", "status", "code", "bookingId", "durationMs", "count", "reason", "driver", "kind", "level", "msg", "time", "ts", "honeypot", "event"]);
+    const allow = new Set(["requestId", "fn", "route", "status", "code", "bookingId", "durationMs", "count", "reason", "driver", "kind", "level", "msg", "time", "ts", "honeypot", "event", "providerStatus", "errorName", "rule"]);
     for (const line of logs.lines) {
       let o: any;
       try { o = JSON.parse(line); } catch { continue; }

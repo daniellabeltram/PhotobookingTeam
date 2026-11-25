@@ -28,7 +28,7 @@ describe("CSV export", () => {
     const text = r.body as string;
     expect(text.charCodeAt(0)).toBe(0xfeff);
     expect(text).toContain("\r\n");
-    expect(text.split("\r\n")[0]).toMatch(/^"Reference","Status"/); // every field quoted
+    expect(text.slice(1).split("\r\n")[0]).toMatch(/^"Reference","Status"/); // every field quoted
     const rows = parseCsv(text);
     expect(rows[0]!.slice(0, 10)).toEqual(COLUMNS_HEAD);
     const widths = new Set(rows.filter((x) => x.length > 1).map((x) => x.length));
@@ -84,7 +84,7 @@ describe("CSV export", () => {
     d = (await admin.get(`/api/admin/bookings/${ref}`)).body.data;
     expect((await admin.post(`/api/admin/bookings/${ref}/delete-client-data`, { confirmReference: "DBP-WRONG1", expectedVersion: d.version })).status).toBe(400);
     expect((await admin.post(`/api/admin/bookings/${ref}/delete-client-data`, { confirmReference: ref.toLowerCase(), expectedVersion: d.version })).status).toBe(200);
-    const text = (await admin.get("/api/admin/export.csv")).body as string;
+    const text = (await admin.get("/api/admin/export.csv?view=all")).body as string; // cancelled rows only show with view=all
     for (const s of ["Quillfeather", "zelda", "5615550142", "QA-STYLE-NOTE"]) expect(text).not.toContain(s);
     expect(text).toContain(ref);
   });

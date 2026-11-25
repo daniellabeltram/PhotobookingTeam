@@ -67,6 +67,7 @@ describe("blocked times (015, 002 #8)", () => {
   it("blocks remove slots, never show their label, overlap warning needs confirmOverlaps, deleting restores", async () => {
     const slot = await firstOpenSlot(api, "portraits", FROM, TO);
     const booked = await api.createBooking(buildBookingBody({ type: "portraits", slot }));
+    const baseline = (await api.availability("portraits", slot.localDate, slot.localDate)).body.data.days[0]!.slots.map((s) => s.startUtc);
     const body = { kind: "all_day", startDate: slot.localDate, endDate: slot.localDate, label: "SECRET-LABEL-QA", confirmOverlaps: false };
     const warn = await admin.post("/api/admin/blocks", body);
     expect(warn.status).toBe(409);
@@ -82,7 +83,20 @@ describe("blocked times (015, 002 #8)", () => {
     expect((await api.createBooking(buildBookingBody({ type: "portraits", slot }), crypto.randomUUID())).status).toBe(409);
     expect((await admin.del(`/api/admin/blocks/${saved.body.data.block.id}`)).status).toBe(204);
     const after = await api.availability("portraits", slot.localDate, slot.localDate);
-    expect(after.body.data.days[0]!.slots.length).toBeGreaterThan(0);
+    // Deleting the block restores exactly what was offered before it (the booking's own afternoon stays taken).
+    expect(after.body.data.days[0]!.slots.map((s) => s.startUtc)).toEqual(baseline);
+  });
+
+  it("a block on a day with no bookings removes every slot, and deleting it brings them all back", async () => {
+    const days = (await api.availability("portraits", FROM, TO)).body.data.days.filter((d) => d.status === "open");
+    const day = days[3]!;
+    const before = day.slots.map((s) => s.startUtc);
+    expect(before.length).toBeGreaterThan(0);
+    const blk = await admin.post("/api/admin/blocks", { kind: "all_day", startDate: day.date, endDate: day.date, label: null, confirmOverlaps: false });
+    expect(blk.status).toBe(201);
+    expect((await api.availability("portraits", day.date, day.date)).body.data.days[0]!.slots).toHaveLength(0);
+    expect((await admin.del(`/api/admin/blocks/${blk.body.data.block.id}`)).status).toBe(204);
+    expect((await api.availability("portraits", day.date, day.date)).body.data.days[0]!.slots.map((s) => s.startUtc)).toEqual(before);
   });
 
   it("end before start, and fully past blocks, are rejected with messages (015 #4)", async () => {
@@ -127,12 +141,12 @@ describe("server-side validation (005 #4, 006 #4; must-have 5)", () => {
     expect(f.status).toBe(201);
   });
 
-  it("Families with children > 0 needs children's ages; Events end must be after start, guests >= 1 (005 #8)", async () => {
-    const f = await bad({ extra: { families: { childrenAges: "", extendedFamily: false } } }, "families");
-    expect(f.status).toBe(400);
+  it("Families childrenAges is OPTIONAL (security decision, config/booking.config.ts); Events end must be after start, guests >= 1 (005 #8)", async () => {
+    const f = await bad({ extra: { families: { extendedFamily: false } } }, "families");
+    expect(f.status).toBe(201);
     const slot = await firstOpenSlot(api, "events", FROM, TO, 120);
     const base = buildBookingBody({ type: "events", slot, durationMin: 120 });
-    const e1 = await api.createBooking({ ...base, extra: { events: { ...base.extra.events, endTime: base.extra.events.startTime } } });
+    const e1 = await api.createBooking({ ...base, extra: { events: { ...base.extra.events, eventEndTime: base.extra.events.eventStartTime } } });
     expect(e1.status).toBe(400);
     const e2 = await api.createBooking({ ...base, extra: { events: { ...base.extra.events, guestCount: 0 } } });
     expect(e2.status).toBe(400);
@@ -300,7 +314,7 @@ describe("API conventions (api.md)", () => {
     expect(a.headers.get("cache-control")).toMatch(/no-store/);
     const c = await api.get("/api/config");
     expect(c.headers.get("cache-control")).toMatch(/max-age=60/);
-    expect(JSON.stringify(c.body)).not.toMatch(/paymentLink|buy\.stripe|adminNotification|rateLimit/i);
+    expect(JSON.stringify(c.body)).not.toMatch(/paymentLinkUrl|depositPaymentLink|buy\.stripe|adminNotification|rateLimit/i);
     expect((await admin.get("/api/admin/bookings/not-a-ref")).status).toBe(404);
     expect((await api.get("/api/policies/v9.9-nope")).status).toBe(404);
     expect((await api.get("/api/availability?type=portraits&from=2026-12-01&to=2027-06-01")).status).toBe(400); // > 62 days

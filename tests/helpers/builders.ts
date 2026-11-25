@@ -1,6 +1,6 @@
 // Request builders for the documented API (docs/api.md). Pure TS: usable from vitest and Playwright.
 import { BASE_URL, CLIENT, TYPE_IDS, type TypeKey, ADMIN_EMAIL, ADMIN_PASSWORD } from "./seed";
-import { addMinutesHHmm } from "./clock";
+import { addDays, addMinutesHHmm } from "./clock";
 
 export type Slot = { startUtc: string; endUtc: string; localDate: string; localTime: string; label: string; rangeLabel: string; miniSlotId?: string };
 export type Day = { date: string; status: "open" | "closed" | "full"; slots: Slot[]; mini?: { spotsLeft: number; totalSpots: number; location: string; theme: string | null } };
@@ -31,7 +31,8 @@ export class Api {
     if (opts.ip) headers["x-nf-client-connection-ip"] = opts.ip;
     const req = new Request(this.base + path, { method, headers, body: hasBody ? (opts.rawBody ?? JSON.stringify(opts.body)) : undefined });
     const res = await this.transport(req);
-    const text = await res.text();
+    // Decode from bytes with ignoreBOM so a UTF-8 BOM (CSV export) is preserved for assertions.
+    const text = new TextDecoder("utf-8", { ignoreBOM: true }).decode(await res.arrayBuffer());
     let body: any = text;
     try { body = text ? JSON.parse(text) : null; } catch { /* csv or empty */ }
     return { status: res.status, headers: res.headers, body, raw: res };
@@ -62,11 +63,23 @@ export class Api {
   }
 }
 
-/** First open slot of a type on/after `from` (within 60 days). Returns the day too. */
+/** Open slots of a type from `from` to `to`, fetched in windows of at most 62 days (the API contract). */
+export async function openSlots(api: Api, type: TypeKey | string, from: string, to: string, durationMin?: number, need = 1) {
+  const out: (Slot & { day: Day })[] = [];
+  let start = from;
+  while (start <= to && out.length < need) {
+    const end = addDays(start, 61) < to ? addDays(start, 61) : to;
+    const r = await api.availability(type, start, end, durationMin);
+    if (r.status !== 200) throw new Error(`availability ${type} -> ${r.status} ${JSON.stringify(r.body)}`);
+    for (const d of r.body.data.days) if (d.status === "open") for (const s of d.slots) out.push({ ...s, day: d });
+    start = addDays(end, 1);
+  }
+  return out;
+}
+
+/** The nth open slot of a type on/after `from` (searching up to `to`). */
 export async function firstOpenSlot(api: Api, type: TypeKey | string, from: string, to: string, durationMin?: number, nth = 0) {
-  const r = await api.availability(type, from, to, durationMin);
-  if (r.status !== 200) throw new Error(`availability ${type} -> ${r.status} ${JSON.stringify(r.body)}`);
-  const slots = r.body.data.days.filter((d) => d.status === "open").flatMap((d) => d.slots.map((s) => ({ ...s, day: d })));
+  const slots = await openSlots(api, type, from, to, durationMin, nth + 1);
   const picked = slots[nth];
   if (!picked) throw new Error(`no open slot #${nth} for ${type} ${from}..${to}`);
   return picked;
