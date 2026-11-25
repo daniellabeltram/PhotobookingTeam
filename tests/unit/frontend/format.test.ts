@@ -32,6 +32,11 @@ describe('formatting', () => {
     expect(lines).toEqual(['A non-refundable retainer of $150.00 holds your date.', 'Reschedule free up to 7 days before.']);
   });
 
+  it('uses the policy variant for requests and paid-in-full types', () => {
+    expect(policySummaryLines(config, events)).toEqual(['This is a request. Daniella replies within 3 days. Retainer if approved: 50% of estimated total.']);
+    expect(policySummaryLines(config, minis)).toEqual(['Paid in full to book. Cancellations within 48 hours are not refunded.']);
+  });
+
   it('small helpers', () => {
     expect(peopleLabel(2, 2, 1)).toBe('4 people, 1 pet');
     expect(peopleLabel(1, 0, 0)).toBe('1 person');

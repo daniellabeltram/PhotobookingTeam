@@ -41,8 +41,8 @@ export function renderMinis(main: HTMLElement): void {
     const mini = c.sessionTypes.find((t) => t.kind === 'mini');
     if (mini) {
       slotLen = mini.durationMin;
-      // Buffer is not in the public config (API gap): start from length + 10 and let Daniella adjust.
-      (spacing.control as HTMLInputElement).value = String(mini.durationMin + 10);
+      // Back-to-back slots: length plus the buffer from the config. Daniella can still adjust it.
+      (spacing.control as HTMLInputElement).value = String(mini.durationMin + mini.bufferMin);
       updatePreview();
     }
   }).catch(() => undefined);
@@ -147,10 +147,17 @@ export function renderMinis(main: HTMLElement): void {
       h('p', null, `${d.location}${d.theme ? ` · ${d.theme}` : ''} · ${d.slots.length} slots · ${d.booked} booked`),
       ...d.slots.map((s) => {
         const rm = h('button', { type: 'button', class: 'btn btn-secondary', 'aria-label': `Remove slot ${s.rangeLabel} on ${formatDateStringMedium(d.date)}` }, 'Remove');
-        rm.addEventListener('click', async () => {
-          try { await deleteMiniSlot(d.date, s.id); toast('Slot removed.'); void load(); } catch (err) {
-            toast(err instanceof ApiError && err.code === 'MINI_DAY_HAS_BOOKINGS' ? 'That slot is booked. Cancel the booking first.' : ACTION_ERROR, 'error');
-          }
+        rm.addEventListener('click', () => {
+          openDialog({
+            title: 'Remove this slot?',
+            description: h('p', null, `${s.rangeLabel} on ${formatDateStringMedium(d.date)} will disappear for clients.`),
+            cancelLabel: 'Keep slot', confirmLabel: 'Remove slot', destructive: true,
+            onConfirm: async (dlg) => {
+              try { await deleteMiniSlot(d.date, s.id); dlg.close(); toast('Slot removed.'); void load(); } catch (err) {
+                dlg.setError(err instanceof ApiError && err.code === 'MINI_DAY_HAS_BOOKINGS' ? 'That slot is booked. Cancel the booking first.' : ACTION_ERROR);
+              }
+            },
+          }, rm);
         });
         return h('div', { class: 'row-item' }, h('p', null, s.rangeLabel, s.bookingId ? ` · booked (${s.bookingId})` : ''), s.bookingId ? null : rm);
       }),

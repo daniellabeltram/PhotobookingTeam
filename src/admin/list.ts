@@ -118,8 +118,8 @@ export function renderList(main: HTMLElement, query: URLSearchParams): void {
       draw(data, page);
       focusHeading(main);
     } catch (err) {
+      if (err instanceof ApiError && err.status === 401) return; // the app shows the sign-in screen
       replaceResults(errorBlock("We couldn't load bookings. Please try again.", () => { void load(); }, err));
-      if (err instanceof ApiError && err.status === 401) return;
     }
   }
 

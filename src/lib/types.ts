@@ -53,6 +53,5 @@ export type BookingFilters = {
   type?: string;
   from?: string;
   to?: string;
-  q?: string;
   page?: string;
 };

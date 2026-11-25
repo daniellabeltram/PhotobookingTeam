@@ -45,9 +45,10 @@ export function renderLogin(opts: { notice: LoginNotice; totpRequired: boolean; 
     busy = true;
     submit.setAttribute('aria-disabled', 'true');
     submit.textContent = 'Signing in...';
+    let ok = false;
     try {
       await adminLogin(code ? { email: e, password: p, totp: code } : { email: e, password: p });
-      opts.onSuccess();
+      ok = true;
     } catch (err) {
       if (err instanceof ApiError) showError(err.isNetwork ? "We can't reach the server. Try again." : err.message);
       else showError('Something went wrong. Please try again.');
@@ -56,6 +57,7 @@ export function renderLogin(opts: { notice: LoginNotice; totpRequired: boolean; 
       submit.removeAttribute('aria-disabled');
       submit.textContent = 'Sign in';
     }
+    if (ok) opts.onSuccess();
   });
 
   const notice = opts.notice === 'expired'

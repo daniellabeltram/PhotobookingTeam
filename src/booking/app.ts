@@ -57,6 +57,11 @@ export class BookingApp implements FlowCtx {
       this.show(5, 'replace', false);
       return;
     }
+    // Anywhere else this is a fresh visit: forget an earlier confirmation so a second booking works.
+    if (this.confirmation) {
+      this.confirmation = null;
+      removeKey(CONF_KEY);
+    }
     if (preset && !this.state.slot) {
       this.state = selectSessionType(this.state, preset).state;
       step = Math.max(step, 2);
@@ -83,7 +88,8 @@ export class BookingApp implements FlowCtx {
     // Keep only what a reload of the confirmation needs: no contact details or intake answers.
     this.state = initialState();
     removeKey(FLOW_KEY);
-    writeJson(CONF_KEY, { result: c.result, firstName: '' });
+    // The location can be a client's home address, so it is not kept across reloads.
+    writeJson(CONF_KEY, { result: { ...c.result, locationLabel: '' }, firstName: '' });
   }
 
   async reloadConfig(): Promise<void> {

@@ -160,7 +160,7 @@ describe("login limiter (H3)", () => {
   });
   it("FAILS CLOSED when the counter cannot be written; booking-style limiters fail open", async () => {
     class Broken extends MemoryKvStore {
-      override async set<T>(): Promise<SetResult> {
+      override async set(): Promise<SetResult> {
         throw new Error("store down");
       }
     }
@@ -170,7 +170,7 @@ describe("login limiter (H3)", () => {
   });
   it("FAILS CLOSED when every compare-and-swap loses", async () => {
     class AlwaysLose extends MemoryKvStore {
-      override async set<T>(): Promise<SetResult> {
+      override async set(): Promise<SetResult> {
         return { ok: false };
       }
     }

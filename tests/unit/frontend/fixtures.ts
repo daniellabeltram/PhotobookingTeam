@@ -4,7 +4,7 @@ const base: Omit<PublicSessionType, 'id' | 'name' | 'durationMin' | 'price' | 'd
   included: [], kind: 'standard', bookingMode: 'instant', hasPaymentLink: true, includedPeople: null,
   extraPersonFeeCents: null, locationOptions: [{ id: 'downtown-waterfront', label: 'Downtown waterfront' }],
   allowOwnLocation: true, allowHelpMeChoose: true, commonFieldsProfile: 'full', intakeExtraFields: [],
-  bookingHorizonDays: 180, nextMiniDates: null, maxPeople: null, description: 'd',
+  bookingHorizonDays: 180, nextMiniDates: null, maxPeople: null, description: 'd', bufferMin: 30,
 };
 
 export const families: PublicSessionType = {
@@ -31,7 +31,7 @@ export const events: PublicSessionType = {
   ],
 };
 export const minis: PublicSessionType = {
-  ...base, id: 'holiday-minis', name: 'Holiday Minis', kind: 'mini', durationMin: 20, commonFieldsProfile: 'short',
+  ...base, id: 'holiday-minis', name: 'Holiday Minis', kind: 'mini', durationMin: 20, bufferMin: 10, commonFieldsProfile: 'short',
   locationOptions: [], allowOwnLocation: false, allowHelpMeChoose: false,
   price: { fromCents: 22500, unit: 'session', label: '$225' },
   deposit: { kind: 'full', text: 'paid in full', cardText: 'Paid in full to book' },
@@ -47,6 +47,10 @@ export const config: PublicConfig = {
   policy: {
     version: 'v0.1-draft',
     summaryTemplate: 'A non-refundable retainer of {{depositText}} holds your date.\nReschedule free up to {{freeRescheduleDays}} days before.',
+    summaryVariants: {
+      request: 'This is a request. Daniella replies within {{requestResponseDays}} days. Retainer if approved: {{depositText}}.',
+      full: 'Paid in full to book. Cancellations within {{lateCancelHours}} hours are not refunded.',
+    },
     values: { freeRescheduleDays: 7, lateCancelHours: 48 },
   },
   intakeFields: [],

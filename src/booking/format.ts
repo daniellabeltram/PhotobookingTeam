@@ -65,14 +65,22 @@ export function firstName(fullName: string): string {
   return fullName.trim().split(/\s+/)[0] ?? '';
 }
 
+/** Which summary text applies: the per-type variant from the policy, or the generic template. */
+export function summaryTemplateFor(config: PublicConfig, type: PublicSessionType): string {
+  if (type.bookingMode === 'request') return config.policy.summaryVariants.request;
+  if (type.deposit.kind === 'full') return config.policy.summaryVariants.full;
+  return config.policy.summaryTemplate;
+}
+
 /** Fills the {{placeholders}} in the policy summary from the type and policy values (shared helper). */
 export function policySummaryLines(config: PublicConfig, type: PublicSessionType): string[] {
   const values: Record<string, string | number> = {
     ...config.policy.values,
     depositText: type.deposit.text,
     unpaidHoldHours: config.scheduling.unpaidHoldHours,
+    requestResponseDays: config.scheduling.requestResponseDays,
   };
-  return renderPolicySummary(config.policy.summaryTemplate, values)
+  return renderPolicySummary(summaryTemplateFor(config, type), values)
     .split(/\n+/).map((x) => x.trim()).filter(Boolean);
 }
 

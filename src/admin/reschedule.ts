@@ -28,7 +28,9 @@ export function openReschedule(b: BookingDetail, trigger: HTMLElement, hooks: Ac
   const notifyBox = h('input', { type: 'checkbox', checked: true });
   const notify = h('label', { class: 'choice' }, notifyBox, h('span', null, `Email ${(b.contact?.fullName ?? 'the client').split(/\s+/)[0]} about the new time`));
 
+  let requestId = 0;
   async function loadSlots(): Promise<void> {
+    const mine = ++requestId;
     chosen = null;
     clear(slotsHost);
     const d = (date.control as HTMLInputElement).value;
@@ -37,8 +39,10 @@ export function openReschedule(b: BookingDetail, trigger: HTMLElement, hooks: Ac
     try {
       const data = await adminAvailability({
         type: b.sessionTypeId, from: d, to: d, excludeBookingId: b.id,
-        durationMin: type?.durationOptionsMin ? duration : undefined,
+        // Ignored by the server for types without length options, required for Events.
+        durationMin: duration,
       });
+      if (mine !== requestId) return; // a newer request (date or length changed) owns the list now
       clear(slotsHost);
       const slots = data.days.find((x) => x.date === d)?.slots ?? [];
       if (slots.length === 0) {
@@ -62,6 +66,7 @@ export function openReschedule(b: BookingDetail, trigger: HTMLElement, hooks: Ac
       setInitialTabStop(buttons);
       slotsHost.append(group);
     } catch (err) {
+      if (mine !== requestId) return;
       clear(slotsHost);
       slotsHost.append(h('p', { role: 'alert' }, err instanceof ApiError && err.isNetwork ? "We can't reach the server. Try again." : "We couldn't load times. Try again."));
     }
@@ -78,6 +83,7 @@ export function openReschedule(b: BookingDetail, trigger: HTMLElement, hooks: Ac
       });
       durationHost.append(f.root);
     }
+    void loadSlots();
   }).catch(() => undefined);
 
   const body = h('div', null,
@@ -113,4 +119,5 @@ export function openReschedule(b: BookingDetail, trigger: HTMLElement, hooks: Ac
       }
     },
   }, trigger);
+  void loadSlots();
 }

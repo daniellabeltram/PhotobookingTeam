@@ -37,7 +37,7 @@ function bookingCard(r: BookingResult, isRequest: boolean): HTMLElement {
       ...row('Date', r.display.date || date),
       ...row('Time', `${r.display.timeRange.replace(/ ET$/, '')} Eastern Time`),
       ...row('Length', durationLabel(r.durationMin)),
-      ...row('Where', r.locationLabel || 'Daniella will suggest spots by email'),
+      ...(r.locationLabel ? row('Where', r.locationLabel) : []),
       ...(isRequest ? row('Status', "Waiting for Daniella's approval") : []),
       ...row('Reference', h('span', { class: 'copy-row' }, h('span', null, r.reference), copyBtn))));
 }

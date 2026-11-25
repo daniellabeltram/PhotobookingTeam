@@ -99,7 +99,7 @@ export const blockSchema = z.discriminatedUnion(
 export const miniSlotsSchema = z.strictObject({
   location: z.string().trim().min(1, "Enter a location").max(100, "Keep the location under 100 characters").optional(),
   theme: z.string().trim().max(60, "Keep the theme under 60 characters").nullish(),
-  startTimes: z.array(z.string().max(10), { error: "Add at least one start time" }).min(1, "Add at least one start time").max(30, "Add at most 30 times at once"),
+  startTimes: z.array(z.string().max(40), { error: "Add at least one start time" }).min(1, "Add at least one start time").max(30, "Add at most 30 times at once"),
 });
 
 // ---- query strings ----

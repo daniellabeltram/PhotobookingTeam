@@ -127,7 +127,9 @@ export function renderDateStep(ctx: FlowCtx): HTMLElement {
     }
   }
 
+  let requestId = 0;
   async function loadMonth(month: string, focus?: string, moveFocus = false): Promise<void> {
+    const mine = ++requestId;
     currentMonth = firstOfMonth(month);
     root.setAttribute('aria-busy', 'true');
     status.textContent = '';
@@ -142,6 +144,7 @@ export function renderDateStep(ctx: FlowCtx): HTMLElement {
         });
         cache.set(key, data);
       }
+      if (mine !== requestId) return; // a newer month or length was requested meanwhile
       days.clear();
       for (const d of data.days) days.set(d.date, d);
       horizonEnd = data.horizonEndDate;
@@ -156,12 +159,15 @@ export function renderDateStep(ctx: FlowCtx): HTMLElement {
       renderMonthNote();
       announce(`${monthName(currentMonth)} ${currentMonth.slice(0, 4)}`);
     } catch (err) {
+      if (mine !== requestId) return;
       clear(status);
       const msg = err instanceof ApiError && !err.isNetwork ? "We couldn't load available times. Please try again." : undefined;
       status.append(networkBanner(() => { void loadMonth(month, focus, moveFocus); }, msg));
     } finally {
-      root.setAttribute('aria-busy', 'false');
-      renderChosen();
+      if (mine === requestId) {
+        root.setAttribute('aria-busy', 'false');
+        renderChosen();
+      }
     }
   }
 

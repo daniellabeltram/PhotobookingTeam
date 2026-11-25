@@ -36,21 +36,10 @@ function summaryCard(ctx: FlowCtx): HTMLElement {
     ));
 }
 
-function variantLines(ctx: FlowCtx): string[] {
-  const t = ctx.type!;
-  if (t.bookingMode === 'request') {
-    return [`This is a request. You won't be charged now. If Daniella approves, you'll get a link for the retainer (${t.deposit.text}).`];
-  }
-  if (t.deposit.kind === 'full') {
-    return [`${t.name} is paid in full (${t.price.label.replace(/^from /, '')}) to book.`];
-  }
-  return [];
-}
-
 export function renderPoliciesStep(ctx: FlowCtx): HTMLElement {
   const t = ctx.type;
   if (!t || !ctx.state.slot) return h('div');
-  const lines = [...variantLines(ctx), ...policySummaryLines(ctx.config, t)];
+  const lines = policySummaryLines(ctx.config, t);
   const checkId = uid('agree');
   const errId = uid('agree-err');
   const alertHost = h('div', { tabindex: '-1' });
