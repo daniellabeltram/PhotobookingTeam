@@ -29,7 +29,7 @@ function applyProps(el: Element, props: Props): void {
     } else if (key === 'text') {
       el.textContent = String(value);
     } else if (value === true) {
-      el.setAttribute(key, '');
+      el.setAttribute(key, key.startsWith('data-') || key.startsWith('aria-') ? 'true' : '');
     } else if (typeof value !== 'function') {
       el.setAttribute(key, String(value));
     }
