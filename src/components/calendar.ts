@@ -34,18 +34,17 @@ export function createCalendar(opts: CalendarOptions): CalendarHandle {
   let min: string | null = null;
   let max: string | null = null;
 
-  const caption = h('caption', { class: 'sr-only', 'aria-live': 'polite' });
+  const titleId = `cal-title-${Math.random().toString(36).slice(2, 7)}`;
   const tbody = h('tbody');
   const prev = h('button', { type: 'button', class: 'btn btn-secondary', 'aria-label': 'Previous month' }, icon('left'));
   const next = h('button', { type: 'button', class: 'btn btn-secondary', 'aria-label': 'Next month' }, icon('right'));
   const grid = h(
     'table',
-    { class: 'cal-grid', role: 'grid' },
-    caption,
+    { class: 'cal-grid', role: 'grid', 'aria-labelledby': titleId },
     h('thead', null, h('tr', null, ...WEEKDAY_ABBR.map((d, i) => h('th', { scope: 'col', abbr: WEEKDAY_NAMES[i], role: 'columnheader' }, d)))),
     tbody,
   );
-  const title = h('p', { class: 'cal-title', 'aria-hidden': 'true' });
+  const title = h('p', { class: 'cal-title', id: titleId });
   const el = h('div', { class: 'cal' }, h('div', { class: 'cal-head' }, prev, title, next), grid);
 
   const clamp = (d: string): string => {
@@ -68,7 +67,6 @@ export function createCalendar(opts: CalendarOptions): CalendarHandle {
 
   function render(moveFocus: boolean): void {
     const label = monthTitle(month);
-    caption.textContent = label;
     title.textContent = label;
     clear(tbody);
     if (focusDate.slice(0, 7) !== month.slice(0, 7)) focusDate = month;

@@ -72,7 +72,8 @@ describe('validateIntake', () => {
     const e = validateIntake(base, events, config);
     expect(e['events.eventEndTime']).toBe('End time must be after start time.');
     expect(e['events.guestCount']).toBeDefined();
-    expect(validateIntake({ ...base, 'events.eventEndTime': '18:00', 'events.guestCount': '40' }, events, config)).toEqual({});
+    expect(validateIntake({ ...base, 'events.eventEndTime': '18:00', 'events.guestCount': '40', 'events.onsiteContactName': 'Sam' }, events, config)).toEqual({});
+    expect(validateIntake({ ...base, 'events.eventEndTime': '18:00', 'events.guestCount': '40' }, events, config)['events.onsiteContactName']).toBeDefined();
   });
 
   it('Minis ask for no location and no preferred contact', () => {

@@ -133,8 +133,13 @@ export function validateIntake(
       if (req('events.guestCount') || g) e['events.guestCount'] = 'Please enter the number of guests (1 or more).';
     }
   }
-  if (has('events.onsiteContactPhone') && val('events.onsiteContactPhone') && !normalizePhone(val('events.onsiteContactPhone'))) {
-    e['events.onsiteContactPhone'] = 'Please enter a phone number like (561) 555-0123.';
+  if (has('events.onsiteContactName') && req('events.onsiteContactName') && !val('events.onsiteContactName')) {
+    e['events.onsiteContactName'] = 'Please enter an on-site contact name.';
+  }
+  if (has('events.onsiteContactPhone')) {
+    const p = val('events.onsiteContactPhone');
+    if (!p && req('events.onsiteContactPhone')) e['events.onsiteContactPhone'] = 'Please enter an on-site contact phone.';
+    else if (p && !normalizePhone(p)) e['events.onsiteContactPhone'] = 'Please enter a phone number like (561) 555-0123.';
   }
   for (const id of ['events.onsiteContactName', 'events.timeline']) {
     if (has(id) && tooLong(id)) e[id] = `Please keep this under ${maxLength(config, id)} characters.`;

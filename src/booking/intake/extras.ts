@@ -59,9 +59,9 @@ function events(form: Form): HTMLElement {
     bindTextField(form, 'events.eventStartTime', { label: 'Start time', type: 'time', help: 'Your session starts at this time.' }),
     bindTextField(form, 'events.eventEndTime', { label: 'End time', type: 'time', help: 'Your session ends at this time.' }),
     bindTextField(form, 'events.guestCount', { label: 'Expected guests', type: 'number', inputmode: 'numeric' }),
-    bindTextField(form, 'events.onsiteContactName', { label: 'On-site contact name', optional: true, maxlength: m('events.onsiteContactName') }),
-    bindTextField(form, 'events.onsiteContactPhone', { label: 'On-site contact phone', optional: true, type: 'tel', inputmode: 'tel' }),
-    bindTextField(form, 'events.timeline', { label: 'Timeline or must-have moments', optional: true, rows: 3, help: 'Cake cutting at 4, toast at 5...', maxlength: m('events.timeline') }),
+    bindTextField(form, 'events.onsiteContactName', { label: 'On-site contact name', optional: !form.required('events.onsiteContactName'), maxlength: m('events.onsiteContactName') }),
+    bindTextField(form, 'events.onsiteContactPhone', { label: 'On-site contact phone', optional: !form.required('events.onsiteContactPhone'), type: 'tel', inputmode: 'tel' }),
+    bindTextField(form, 'events.timeline', { label: 'Timeline or must-have moments', optional: !form.required('events.timeline'), rows: 3, help: 'Cake cutting at 4, toast at 5...', maxlength: m('events.timeline') }),
   );
 }
 

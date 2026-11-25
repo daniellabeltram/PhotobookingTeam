@@ -15,7 +15,9 @@ const LABELS: Record<string, string> = {
   'couples.occasion': 'Occasion', 'couples.surpriseProposal': 'Surprise proposal', 'families.childrenAges': "Children's ages",
   'families.extendedFamily': 'Extended family', 'events.eventName': 'Event name', 'events.eventType': 'Type of event',
   'events.venueAddress': 'Venue', 'events.eventStartTime': 'Start time', 'events.eventEndTime': 'End time',
-  'events.guestCount': 'Guests',
+  'events.guestCount': 'Guests', 'events.onsiteContactName': 'On-site contact name', 'events.onsiteContactPhone': 'On-site contact phone',
+  'events.timeline': 'Timeline', 'minis.cardDeadline': 'Card deadline', styleNotes: 'Style and mood', mustHaveShots: 'Must-have photos',
+  anythingElse: 'Anything else', heardAbout: 'How you heard about us',
 };
 
 export function renderIntakeStep(ctx: FlowCtx): HTMLElement {
@@ -36,7 +38,7 @@ export function renderIntakeStep(ctx: FlowCtx): HTMLElement {
     summary.append(h('h2', null, count > 0 ? `Please fix ${count} ${count === 1 ? 'thing' : 'things'} to continue` : "We couldn't save that"));
     if (errors['_form']) summary.append(h('p', null, errors['_form']));
     if (count > 0) {
-      summary.append(h('ul', null, ...keys.map((k) => h('li', null, h('button', { type: 'button', class: 'btn-link', onClick: () => form.focusKey(k) }, `${LABELS[k] ?? k}: ${errors[k]}`)))));
+      summary.append(h('ul', null, ...keys.map((k) => h('li', null, h('button', { type: 'button', class: 'btn-link', onClick: () => form.focusKey(k) }, `${LABELS[k] ?? 'This field'}: ${errors[k]}`)))));
     }
     summary.focus();
     announceUrgent(`Please fix ${count} ${count === 1 ? 'thing' : 'things'} to continue.`);

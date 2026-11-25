@@ -27,7 +27,7 @@ export const events: PublicSessionType = {
   intakeExtraFields: [
     { id: 'events.eventName', required: true }, { id: 'events.eventType', required: true }, { id: 'events.venueAddress', required: true },
     { id: 'events.eventStartTime', required: true }, { id: 'events.eventEndTime', required: true }, { id: 'events.guestCount', required: true },
-    { id: 'events.onsiteContactName', required: false }, { id: 'events.timeline', required: false },
+    { id: 'events.onsiteContactName', required: true }, { id: 'events.timeline', required: false },
   ],
 };
 export const minis: PublicSessionType = {
