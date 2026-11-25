@@ -30,12 +30,12 @@ describe("CSV export", () => {
     expect(text).toContain("\r\n");
     expect(text.split("\r\n")[0]).toMatch(/^"Reference","Status"/); // every field quoted
     const rows = parseCsv(text);
-    expect(rows[0].slice(0, 10)).toEqual(COLUMNS_HEAD);
+    expect(rows[0]!.slice(0, 10)).toEqual(COLUMNS_HEAD);
     const widths = new Set(rows.filter((x) => x.length > 1).map((x) => x.length));
     expect(widths.size, "every row has the header's column count").toBe(1);
     expect(rows).toHaveLength(2);
-    const col = rows[0].indexOf("Names photographed");
-    expect(rows[1][col]).toBe('Zoë "Zo", O\'Neil,\nsecond line'); // commas, quotes, newline, accent survive
+    const col = rows[0]!.indexOf("Names photographed");
+    expect(rows[1]![col]).toBe('Zoë "Zo", O\'Neil,\nsecond line'); // commas, quotes, newline, accent survive
   });
 
   it.each(FORMULA_PAYLOADS)("formula injection guard: %j is neutralised (016 #4)", async (payload) => {
@@ -45,10 +45,10 @@ describe("CSV export", () => {
     expect([201, 400]).toContain(res.status); // the server may also reject odd names; if stored, they must be guarded
     if (res.status !== 201) return;
     const rows = parseCsv((await admin.get("/api/admin/export.csv")).body as string);
-    const idx = ["Client name", "Names photographed", "Style notes", "Anything to know"].map((h) => rows[0].indexOf(h));
+    const idx = ["Client name", "Names photographed", "Style notes", "Anything to know"].map((h) => rows[0]!.indexOf(h));
     for (const i of idx) {
-      const cell = rows[1][i];
-      expect(cell, `column ${rows[0][i]}`).not.toMatch(/^[=+\-@\t\r]/);
+      const cell = rows[1]![i]!;
+      expect(cell, `column ${rows[0]![i]}`).not.toMatch(/^[=+\-@\t\r]/);
       if (/^[=+\-@\t\r]/.test(i === idx[0] ? payload.replace(/^[\t\r]/, "") : payload)) expect(cell.startsWith("'")).toBe(true);
     }
   });

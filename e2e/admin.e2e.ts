@@ -48,7 +48,7 @@ test.describe("Admin bookings", () => {
     await expect(page.getByText(CLIENT.childrenAges)).toBeVisible();
     await expect(page.getByText(/Accepted v0\.1-draft|v0\.1-draft/)).toBeVisible();
     await page.getByRole("link", { name: /All bookings/ }).click();
-    await page.goto("/admin/?status=confirmed");
+    await page.goto("/admin/#/bookings?status=confirmed&view=all");
     expect(page.url()).toContain("status=confirmed");
   });
 
@@ -56,7 +56,7 @@ test.describe("Admin bookings", () => {
     const admin = await adminApi(request, baseURL!);
     const { reference } = await seedBooking(admin, "events", { nth: 2, durationMin: 120 });
     await adminLoggedIn(page);
-    await page.goto(`/admin/?q=${encodeURIComponent(CLIENT.fullName)}&status=requested`);
+    await page.goto(`/admin/#/bookings?q=${encodeURIComponent(CLIENT.fullName)}&status=requested&view=all`);
     await page.getByRole("link", { name: /Requested/ }).first().click();
     await expect(page.getByRole("button", { name: "Mark deposit paid" })).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Cancel booking" })).toHaveCount(0);
@@ -71,10 +71,9 @@ test.describe("Admin bookings", () => {
 
   test("Events request: decline frees the slot (020 #16)", async ({ page, request, baseURL }) => {
     const admin = await adminApi(request, baseURL!);
-    const { reference, slot } = await seedBooking(admin, "events", { nth: 5, durationMin: 120 });
+    const { slot } = await seedBooking(admin, "events", { nth: 5, durationMin: 120 });
     await adminLoggedIn(page);
-    await page.goto(`/admin/booking/${reference}`).catch(() => undefined);
-    await page.goto(`/admin/?q=${encodeURIComponent(CLIENT.fullName)}&status=requested`);
+    await page.goto(`/admin/#/bookings?q=${encodeURIComponent(CLIENT.fullName)}&status=requested&view=all`);
     await page.getByRole("link", { name: /Requested/ }).last().click();
     await page.getByRole("button", { name: "Decline" }).first().click();
     const dlg = page.getByRole("alertdialog");
@@ -82,17 +81,17 @@ test.describe("Admin bookings", () => {
     await dlg.getByRole("button", { name: "Decline request" }).click();
     await expect(page.getByText("Declined").first()).toBeVisible();
     const open = await admin.availability("events", slot.localDate, slot.localDate, 120);
-    expect(open.body.data.days[0].slots.map((s: any) => s.startUtc)).toContain(slot.startUtc);
+    expect(open.body.data.days[0]!.slots.map((s: any) => s.startUtc)).toContain(slot.startUtc);
   });
 
   test("cancel: dialog says the slot is freed; slot is offered again (013 #4, must-have 8)", async ({ page, request, baseURL }) => {
     const admin = await adminApi(request, baseURL!);
     const { reference, slot } = await seedBooking(admin, "couples", { nth: 6 });
     const before = await admin.availability("couples", slot.localDate, slot.localDate);
-    expect(before.body.data.days[0].slots.map((s: any) => s.startUtc)).not.toContain(slot.startUtc);
+    expect(before.body.data.days[0]!.slots.map((s: any) => s.startUtc)).not.toContain(slot.startUtc);
 
     await adminLoggedIn(page);
-    await page.goto(`/admin/?q=${encodeURIComponent(CLIENT.fullName)}&status=pending_deposit`);
+    await page.goto(`/admin/#/bookings?q=${encodeURIComponent(CLIENT.fullName)}&status=pending_deposit&view=all`);
     await page.getByRole("link", { name: /Couples/ }).first().click();
     await page.getByRole("button", { name: "Cancel booking" }).click();
     const dlg = page.getByRole("alertdialog");
@@ -104,7 +103,7 @@ test.describe("Admin bookings", () => {
     await expect(page.getByText(/Cancelled/).first()).toBeVisible();
 
     const after = await admin.availability("couples", slot.localDate, slot.localDate);
-    expect(after.body.data.days[0].slots.map((s: any) => s.startUtc)).toContain(slot.startUtc);
+    expect(after.body.data.days[0]!.slots.map((s: any) => s.startUtc)).toContain(slot.startUtc);
     const d = await admin.get(`/api/admin/bookings/${reference}`);
     expect(d.body.data.status).toBe("cancelled");
     expect(d.body.data.history.at(-1).toStatus).toBe("cancelled");
@@ -187,7 +186,7 @@ test.describe("CSV export", () => {
     const text = (await import("node:fs")).readFileSync(path!, "utf8");
     expect(text.charCodeAt(0)).toBe(0xfeff);
     const rows = parseCsv(text);
-    expect(rows[0].slice(0, 4)).toEqual(["Reference", "Status", "Session type", "Date (ET)"]);
+    expect(rows[0]!.slice(0, 4)).toEqual(["Reference", "Status", "Session type", "Date (ET)"]);
     expect(rows.some((r) => r[0] === reference)).toBe(true);
   });
 

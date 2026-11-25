@@ -11,7 +11,7 @@ async function slotsFor(now: string, type: string, date: string) {
   const api = app.api();
   const r = await api.availability(type, date, date);
   expect(r.status).toBe(200);
-  return { app, api, day: r.body.data.days[0] };
+  return { app, api, day: r.body.data.days[0]! };
 }
 
 describe.each([
@@ -22,7 +22,7 @@ describe.each([
     it(`${type}: slots are ET wall-clock correct, none in 1:00-3:00 AM, none duplicated, same times as an ordinary day`, async () => {
       const dur = type === "events" ? 120 : undefined;
       const { api, day } = await slotsFor(now, type, date);
-      const ordinary = (await api.availability(type, addWeek(date), addWeek(date), dur)).body.data.days[0];
+      const ordinary = (await api.availability(type, addWeek(date), addWeek(date), dur)).body.data.days[0]!;
       const times: string[] = day.slots.map((s: Slot) => s.localTime);
       expect(new Set(times).size, "no duplicate times").toBe(times.length);
       for (const s of day.slots as Slot[]) {
@@ -55,12 +55,13 @@ describe.each([
     expect(d.display.timeRange).toBe(slot.rangeLabel);
     // .ics: DTSTART must be either TZID=America/New_York local time or UTC at the same instant.
     const { sentEmails } = await import("../../helpers/app");
-    const mail = (await sentEmails()).find((m) => JSON.stringify(m).includes("BEGIN:VCALENDAR"));
+    const withIcs = (await sentEmails()).find((m) => (m.attachments ?? []).some((a: any) => /calendar|\.ics/i.test(a.contentType + a.filename)));
+    const mail = withIcs?.attachments?.find((a: any) => /calendar|\.ics/i.test(a.contentType + a.filename));
     if (mail) {
-      const ics = JSON.stringify(mail).replace(/\\r\\n/g, "\n");
+      const ics = Buffer.from(mail.contentBase64, "base64").toString("utf8").replace(/\r\n/g, "\n");
       const m = ics.match(/DTSTART(?:;TZID=America\/New_York)?:(\d{8}T\d{6}Z?)/);
       expect(m, "DTSTART present").toBeTruthy();
-      const raw = m![1];
+      const raw = m![1]!;
       const iso = raw.endsWith("Z") ? `${raw.slice(0, 4)}-${raw.slice(4, 6)}-${raw.slice(6, 8)}T${raw.slice(9, 11)}:${raw.slice(11, 13)}:${raw.slice(13, 15)}Z` : null;
       if (iso) expect(+new Date(iso)).toBe(+new Date(slot.startUtc));
       else expect(`${raw.slice(9, 11)}:${raw.slice(11, 13)}`).toBe(slot.localTime);
@@ -79,7 +80,7 @@ describe.each([
     const a = await admin.post("/api/admin/blocks", { kind: "all_day", startDate: date, endDate: date, label: null, confirmOverlaps: false });
     expect(a.status).toBe(201);
     expect(etTime(a.body.data.block.startUtc)).toBe("00:00");
-    const day = (await app.api().availability("portraits", date, date)).body.data.days[0];
+    const day = (await app.api().availability("portraits", date, date)).body.data.days[0]!;
     expect(day.slots).toHaveLength(0);
   });
 });

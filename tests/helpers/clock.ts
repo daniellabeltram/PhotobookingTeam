@@ -51,7 +51,7 @@ export function addDays(date: string, n: number): string {
 }
 
 export function addMinutesHHmm(hhmm: string, minutes: number): string {
-  const [h, m] = hhmm.split(":").map(Number);
+  const [h = 0, m = 0] = hhmm.split(":").map(Number);
   const t = h * 60 + m + minutes;
   return `${String(Math.floor(t / 60) % 24).padStart(2, "0")}:${String(t % 60).padStart(2, "0")}`;
 }

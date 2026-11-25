@@ -6,11 +6,24 @@ import type { PolicyVersion } from "../../shared/config-schema";
 export const v0_1_draft: PolicyVersion = {
   version: "v0.1-draft",
   effectiveDate: "2026-11-25",
+  // Base wording: instant types with a retainer (Portraits, Couples, Families). The hold is a request to pay,
+  // never an automatic release: in v1 Daniella cancels an overdue booking by hand (decision 2026-11-25).
   summaryTemplate:
     "A non-refundable retainer of {{depositText}} holds your date and goes toward your session fee. " +
+    "Please pay it within {{unpaidHoldHours}} hours. If it hasn't arrived by then, your time may be released. " +
     "You can reschedule once for free up to {{freeRescheduleDays}} days before your session. Weather reschedules are always free. " +
-    "Cancellations within {{lateCancelHours}} hours forfeit the retainer and 50% of the balance. " +
-    "Your time is held for {{unpaidHoldHours}} hours until the retainer is received.",
+    "Cancellations within {{lateCancelHours}} hours forfeit the retainer and 50% of the balance.",
+  summaryVariants: {
+    // Events: a request. Nothing is held for payment and nothing is due until Daniella approves.
+    request:
+      "This is a request, not a booking. Your time is reserved while Daniella reviews it, and she will reply within {{requestResponseDays}} days. " +
+      "No payment is due now. If she approves, you'll get a link to pay a non-refundable retainer of {{depositText}}, which goes toward your session fee, and you'll be asked to pay it within {{unpaidHoldHours}} hours. " +
+      "Weather reschedules are always free. Cancellations within {{lateCancelHours}} hours forfeit the retainer and 50% of the balance.",
+    // Holiday Minis: paid in full at booking.
+    full:
+      "Holiday Minis are paid in full at booking ({{depositText}}). Please pay within {{unpaidHoldHours}} hours. If it hasn't arrived by then, your spot may be released. " +
+      "Mini sessions can be swapped for another open mini slot that season if one is available. Weather reschedules are always free, and there is one rain date announced in advance.",
+  },
   values: {
     freeRescheduleDays: 7, // [PLACEHOLDER]
     lateCancelHours: 48, // [PLACEHOLDER]

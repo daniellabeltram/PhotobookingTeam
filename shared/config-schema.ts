@@ -148,6 +148,8 @@ export const policySchema = z.strictObject({
   version: z.string().min(1),
   effectiveDate: isoDate,
   summaryTemplate: z.string().min(1),
+  /** Other wording for request-mode types (Events) and paid-in-full types (Minis). The base template is the instant/retainer one. */
+  summaryVariants: z.strictObject({ request: z.string().min(1), full: z.string().min(1) }),
   values: z.record(z.string(), z.union([z.number(), z.string()])),
   sections: z.array(z.strictObject({ heading: z.string().min(1), paragraphs: z.array(z.string().min(1)).min(1) })).min(1),
 });

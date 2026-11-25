@@ -58,7 +58,7 @@ describe("concurrent creates", () => {
 
   it("overlapping slots of DIFFERENT types submitted together -> only one booking (004 #2)", async () => {
     const slot = await firstOpenSlot(api, "portraits", FROM, TO);
-    const couples = (await api.availability("couples", slot.localDate, slot.localDate)).body.data.days[0].slots.find((s: any) => s.startUtc === slot.startUtc);
+    const couples = (await api.availability("couples", slot.localDate, slot.localDate)).body.data.days[0]!.slots.find((s: any) => s.startUtc === slot.startUtc);
     expect(couples, "Couples must offer the same start (same window, same grid)").toBeTruthy();
     const [a, b] = await Promise.all([
       app.api().createBooking(buildBookingBody({ type: "portraits", slot })),
@@ -69,7 +69,7 @@ describe("concurrent creates", () => {
 
   it("slots that overlap only through the buffer also conflict (004 #2 + buffers)", async () => {
     const slot = await firstOpenSlot(api, "portraits", FROM, TO);
-    const day = (await api.availability("portraits", slot.localDate, slot.localDate)).body.data.days[0].slots;
+    const day = (await api.availability("portraits", slot.localDate, slot.localDate)).body.data.days[0]!.slots;
     const end = +new Date(slot.endUtc);
     const next = day.find((s: any) => +new Date(s.startUtc) >= end && +new Date(s.startUtc) - end < 30 * 60000);
     if (!next) return; // grid has no slot inside the buffer: nothing to prove here (buffers.test covers the boundary)
@@ -80,7 +80,7 @@ describe("concurrent creates", () => {
   it("20 parallel creates over 5 distinct slots keep the invariant: no two active bookings overlap (004 #9)", async () => {
     const slots: Slot[] = [];
     for (let i = 0; i < 5; i++) slots.push(await firstOpenSlot(api, "portraits", FROM, TO, undefined, i));
-    await Promise.all(Array.from({ length: 20 }, (_, i) => app.api().createBooking(buildBookingBody({ type: "portraits", slot: slots[i % 5] }), newKey())));
+    await Promise.all(Array.from({ length: 20 }, (_, i) => app.api().createBooking(buildBookingBody({ type: "portraits", slot: slots[i % 5]! }), newKey())));
     const items = await adminList();
     const admin = app.api();
     await admin.login();
@@ -109,14 +109,14 @@ describe("Holiday Minis race (004 #8)", () => {
     await admin.login();
     const created = await admin.post("/api/admin/mini-days/2026-12-12/slots", { location: "Phillips Point", theme: "Winter", startTimes: ["08:00", "08:30", "09:00"] });
     expect(created.status).toBe(201);
-    const before = (await api.availability("minis", "2026-12-12", "2026-12-12")).body.data.days[0];
+    const before = (await api.availability("minis", "2026-12-12", "2026-12-12")).body.data.days[0]!;
     expect(before.mini!.spotsLeft).toBe(3);
-    const slot = before.slots[0];
+    const slot = before.slots[0]!;
     expect(slot.miniSlotId).toBeTruthy();
     const rs = await Promise.all([1, 2, 3, 4].map((i) => app.api().createBooking(buildBookingBody({ type: "minis", slot, contact: { email: `fam${i}@example.test` } }), newKey())));
     expect(rs.filter((r) => r.status === 201)).toHaveLength(1);
     expect(rs.filter((r) => r.status === 409)).toHaveLength(3);
-    const after = (await api.availability("minis", "2026-12-12", "2026-12-12")).body.data.days[0];
+    const after = (await api.availability("minis", "2026-12-12", "2026-12-12")).body.data.days[0]!;
     expect(after.mini!.spotsLeft).toBe(2);
   });
 });

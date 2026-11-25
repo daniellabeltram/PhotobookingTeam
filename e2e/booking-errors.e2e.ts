@@ -1,7 +1,7 @@
 // Slot taken (004), validation (005), policy required (006), honeypot hidden (017), inactive/unknown type link (001 #6).
 import { test, expect } from "@playwright/test";
 import { acceptPolicies, apiFor, chooseSession, fillAbout, pickFirstDayAndTime, reachPoliciesStep, submitBooking } from "./support/flow";
-import { buildBookingBody, firstOpenSlot, newKey } from "../tests/helpers/builders";
+import { buildBookingBody, firstOpenSlot } from "../tests/helpers/builders";
 import { OTHER_CLIENT } from "../tests/helpers/seed";
 import { WINDOW_FROM, WINDOW_TO } from "./support/admin";
 

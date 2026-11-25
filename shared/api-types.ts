@@ -68,6 +68,8 @@ export interface PublicSessionType {
   bookingMode: BookingMode;
   durationMin: number;
   durationOptionsMin?: number[];
+  /** Minimum gap between two sessions of this type; the admin minis form spaces slots by durationMin + bufferMin. */
+  bufferMin: number;
   price: { fromCents: number; unit: "session" | "hour"; label: string };
   /** `text` fits the policy sentence "a retainer of {{depositText}}"; `cardText` is the picker-card wording (additive field). */
   deposit: { kind: "flat" | "percent" | "full" | "none"; text: string; cardText: string; percent?: number; amountCents?: number };
@@ -91,7 +93,7 @@ export interface PublicConfig {
   scheduling: { minimumNoticeHours: number; unpaidHoldHours: number; requestResponseDays: number };
   features: { portfolioOptOutEnabled: boolean };
   privacy: { dataRetentionMonths: number; privacyContactEmail: string; lastUpdated: string };
-  policy: { version: string; summaryTemplate: string; values: Record<string, number | string> };
+  policy: { version: string; summaryTemplate: string; summaryVariants: { request: string; full: string }; values: Record<string, number | string> };
   intakeFields: PublicIntakeField[];
   sessionTypes: PublicSessionType[];
 }
@@ -103,6 +105,7 @@ export interface PolicyDocument {
   effectiveDate: string;
   isCurrent: boolean;
   summaryTemplate: string;
+  summaryVariants: { request: string; full: string };
   values: Record<string, number | string>;
   sections: { heading: string; paragraphs: string[] }[];
 }

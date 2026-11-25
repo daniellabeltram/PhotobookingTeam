@@ -82,9 +82,11 @@ export async function fillIntake(page: Page, type: TypeKey) {
     await page.getByLabel("Type of event").selectOption({ label: "Birthday" });
     await page.getByLabel("Venue name and address").fill("QA Venue, 1 Clematis St, West Palm Beach");
     await page.getByLabel("Expected guests").fill("20");
+    await page.getByLabel("On-site contact name").fill("Pat Planner");
+    await page.getByLabel("On-site contact phone").fill("5615550100");
     // Start prefilled from step 2; end time is ours to set (2 hours later is checked by the server rules).
     const start = await page.getByLabel("Start time").inputValue();
-    const [h, m] = start.split(":").map(Number);
+    const [h = 0, m = 0] = start.split(":").map(Number);
     const end = `${String((h + 2) % 24).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
     await page.getByLabel("End time").fill(end);
   }

@@ -86,7 +86,7 @@ describe("Honeypot and rate limit (017)", () => {
     expect((await admin.get("/api/admin/bookings?view=all")).body.data.total).toBe(0);
     expect((await admin.get(`/api/admin/bookings/${r.body.data.reference}`)).status).toBe(404);
     const again = await api.availability("portraits", slot.localDate, slot.localDate);
-    expect(again.body.data.days[0].slots.map((s: any) => s.startUtc)).toContain(slot.startUtc);
+    expect(again.body.data.days[0]!.slots.map((s: any) => s.startUtc)).toContain(slot.startUtc);
     expect((await sentEmails()).length).toBe(0);
   });
 

@@ -53,7 +53,7 @@ describe("buffers (002 #3)", () => {
     const buffer = (await admin.get(`/api/admin/bookings/${res.body.data.reference}`)).body.data.bufferMin as number;
     const busyStart = +new Date(slot.startUtc) - buffer * 60000, busyEnd = +new Date(slot.endUtc) + buffer * 60000;
     for (const type of ["portraits", "couples", "families"]) {
-      const day = (await api.availability(type, slot.localDate, slot.localDate)).body.data.days[0];
+      const day = (await api.availability(type, slot.localDate, slot.localDate)).body.data.days[0]!;
       for (const s of day.slots as Slot[]) {
         const a = +new Date(s.startUtc) - buffer * 60000, b = +new Date(s.endUtc) + buffer * 60000;
         // The new slot's own buffered interval must not overlap the existing busy interval.
@@ -76,13 +76,13 @@ describe("blocked times (015, 002 #8)", () => {
     const saved = await admin.post("/api/admin/blocks", { ...body, confirmOverlaps: true });
     expect(saved.status).toBe(201);
     const pub = await api.get(`/api/availability?type=portraits&from=${slot.localDate}&to=${slot.localDate}`);
-    expect(pub.body.data.days[0].slots).toHaveLength(0);
+    expect(pub.body.data.days[0]!.slots).toHaveLength(0);
     expect(JSON.stringify(pub.body)).not.toContain("SECRET-LABEL-QA");
     expect((await admin.get(`/api/admin/bookings/${booked.body.data.reference}`)).body.data.status).toBe("pending_deposit"); // untouched
     expect((await api.createBooking(buildBookingBody({ type: "portraits", slot }), crypto.randomUUID())).status).toBe(409);
     expect((await admin.del(`/api/admin/blocks/${saved.body.data.block.id}`)).status).toBe(204);
     const after = await api.availability("portraits", slot.localDate, slot.localDate);
-    expect(after.body.data.days[0].slots.length).toBeGreaterThan(0);
+    expect(after.body.data.days[0]!.slots.length).toBeGreaterThan(0);
   });
 
   it("end before start, and fully past blocks, are rejected with messages (015 #4)", async () => {
@@ -220,7 +220,7 @@ describe("lifecycle (007 #1, 009, 013, 020)", () => {
     const cancelled = await admin.patch(`/api/admin/bookings/${ref}`, { action: "cancel", expectedVersion: d.version, reason: "client_cancelled", notifyClient: true });
     expect(cancelled.status).toBe(200);
     const open = await api.availability("couples", slot.localDate, slot.localDate);
-    expect(open.body.data.days[0].slots.map((s: any) => s.startUtc)).toContain(slot.startUtc);
+    expect(open.body.data.days[0]!.slots.map((s: any) => s.startUtc)).toContain(slot.startUtc);
     const v = cancelled.body.data.booking.version;
     for (const body of [{ action: "mark_paid", expectedVersion: v, amountCents: 1, receivedOn: "2026-12-01" }, { action: "approve", expectedVersion: v }]) {
       expect((await admin.patch(`/api/admin/bookings/${ref}`, body)).status).toBe(422);
@@ -263,7 +263,7 @@ describe("lifecycle (007 #1, 009, 013, 020)", () => {
     expect(r.body.data.booking.startUtc).toBe(s2.startUtc);
     expect(r.body.data.booking.rescheduleCount).toBe(1);
     const open = await api.availability("families", s1.localDate, s1.localDate);
-    expect(open.body.data.days[0].slots.map((s: any) => s.startUtc)).toContain(s1.startUtc);
+    expect(open.body.data.days[0]!.slots.map((s: any) => s.startUtc)).toContain(s1.startUtc);
     // moving onto a taken time fails and keeps the original
     const other = await api.createBooking(buildBookingBody({ type: "families", slot: s1, contact: { email: "o@example.test" } }));
     expect(other.status).toBe(201);

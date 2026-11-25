@@ -14,7 +14,12 @@ export const newKey = () => crypto.randomUUID();
 
 export class Api {
   cookie = "";
-  constructor(private transport: Transport = httpTransport, private base = BASE_URL) {}
+  private transport: Transport;
+  private base: string;
+  constructor(transport: Transport = httpTransport, base: string = BASE_URL) {
+    this.transport = transport;
+    this.base = base;
+  }
 
   async call<T = any>(method: string, path: string, opts: { body?: unknown; headers?: Record<string, string>; idempotencyKey?: string | null; origin?: boolean; rawBody?: string; ip?: string } = {}): Promise<ApiResult<T>> {
     const headers: Record<string, string> = { ...(opts.headers ?? {}) };
@@ -40,7 +45,7 @@ export class Api {
   async login(email = ADMIN_EMAIL, password = ADMIN_PASSWORD) {
     const r = await this.post("/api/admin/login", { email, password });
     const set = r.raw.headers.getSetCookie?.() ?? [];
-    const c = set.map((s) => s.split(";")[0]).find((s) => /dbp_admin=/.test(s));
+    const c = set.map((s) => s.split(";")[0] ?? "").find((s) => /dbp_admin=/.test(s));
     if (r.status === 200 && c) this.cookie = c;
     return r;
   }
@@ -62,8 +67,9 @@ export async function firstOpenSlot(api: Api, type: TypeKey | string, from: stri
   const r = await api.availability(type, from, to, durationMin);
   if (r.status !== 200) throw new Error(`availability ${type} -> ${r.status} ${JSON.stringify(r.body)}`);
   const slots = r.body.data.days.filter((d) => d.status === "open").flatMap((d) => d.slots.map((s) => ({ ...s, day: d })));
-  if (!slots[nth]) throw new Error(`no open slot #${nth} for ${type} ${from}..${to}`);
-  return slots[nth];
+  const picked = slots[nth];
+  if (!picked) throw new Error(`no open slot #${nth} for ${type} ${from}..${to}`);
+  return picked;
 }
 
 export const POLICY_VERSION = "v0.1-draft";
@@ -115,12 +121,13 @@ export function buildBookingBody(o: BodyOpts): Record<string, any> {
     body.extra = {
       events: {
         eventName: "QA Birthday",
-        eventType: "birthday",
+        eventType: "Birthday",
         venueAddress: "QA Venue, 1 Clematis St, West Palm Beach",
-        startTime: o.slot.localTime,
-        endTime: addMinutesHHmm(o.slot.localTime, dur),
+        eventStartTime: o.slot.localTime,
+        eventEndTime: addMinutesHHmm(o.slot.localTime, dur),
         guestCount: 20,
-        onsiteContact: "Pat, 5615550100",
+        onsiteContactName: "Pat Planner",
+        onsiteContactPhone: "5615550100",
         timeline: "Cake at 4",
       },
     };
@@ -134,7 +141,7 @@ export function findOverlaps(items: { id: string; busyStartUtc?: string; busyEnd
   const out: [string, string][] = [];
   for (let i = 0; i < active.length; i++)
     for (let j = i + 1; j < active.length; j++) {
-      const a = active[i], b = active[j];
+      const a = active[i]!, b = active[j]!;
       const as = +new Date(a.busyStartUtc ?? new Date(+new Date(a.startUtc) - bufferMin * 60000)), ae = +new Date(a.busyEndUtc ?? new Date(+new Date(a.endUtc) + bufferMin * 60000));
       const bs = +new Date(b.busyStartUtc ?? new Date(+new Date(b.startUtc) - bufferMin * 60000)), be = +new Date(b.busyEndUtc ?? new Date(+new Date(b.endUtc) + bufferMin * 60000));
       if (as < be && bs < ae) out.push([a.id, b.id]);

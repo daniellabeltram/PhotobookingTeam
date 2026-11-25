@@ -77,7 +77,7 @@ export function captureLogs() {
 export async function sentEmails(): Promise<any[]> {
   const p = "../../netlify/lib/services";
   const mod: any = await import(/* @vite-ignore */ p);
-  const svc = typeof mod.getServices === "function" ? await mod.getServices() : mod.services;
+  const svc = mod.getServices();
   const email = svc?.email;
   const list = email?.sent ?? email?.messages ?? email?.outbox;
   if (!Array.isArray(list)) throw new Error("QA helper sentEmails(): memory email driver exposes no `sent` array; adapt tests/helpers/app.ts");

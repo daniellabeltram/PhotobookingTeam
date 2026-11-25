@@ -49,6 +49,7 @@ export async function buildPublicConfig(svc: Services): Promise<PublicConfig> {
       bookingMode: t.bookingMode,
       durationMin: t.durationMin,
       ...(t.durationOptionsMin ? { durationOptionsMin: t.durationOptionsMin } : {}),
+      bufferMin: t.bufferMin,
       price: { fromCents: t.priceFromCents, unit: t.priceUnit, label: priceLabel(t) },
       deposit: {
         kind: t.deposit.kind,
@@ -89,7 +90,7 @@ export async function buildPublicConfig(svc: Services): Promise<PublicConfig> {
       privacyContactEmail: config.privacy.privacyContactEmail,
       lastUpdated: config.privacy.lastUpdated,
     },
-    policy: { version: policy.version, summaryTemplate: policy.summaryTemplate, values: policy.values },
+    policy: { version: policy.version, summaryTemplate: policy.summaryTemplate, summaryVariants: policy.summaryVariants, values: policy.values },
     intakeFields: getCatalogue().map((f) => ({ ...f })),
     sessionTypes,
   };

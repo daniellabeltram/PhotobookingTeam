@@ -19,8 +19,8 @@ function paymentBlock(ctx: EmailContext): Block[] {
   const hold = ctx.config.scheduling.unpaidHoldHours;
   const title = full ? "One quick step: pay to hold your spot" : "One quick step: hold your date";
   const lead = full
-    ? `Mini sessions are paid in full to book. Your spot is held for ${hold} hours. The amount is ${due}.`
-    : `Your time is held for ${hold} hours. To keep it, pay your ${estimated ? "estimated " : ""}${due} retainer. The retainer goes toward your session fee.`;
+    ? `Mini sessions are paid in full to book. Please pay ${due} within ${hold} hours. If it hasn't arrived by then, your spot may be released.`
+    : `Please pay your ${estimated ? "estimated " : ""}${due} retainer within ${hold} hours. If it hasn't arrived by then, your time may be released. The retainer goes toward your session fee.`;
   const blocks: Block[] = [{ title, paragraphs: [lead] }];
   if (b.pricing.paymentLinkUrl) {
     blocks.push({

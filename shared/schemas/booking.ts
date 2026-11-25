@@ -4,6 +4,16 @@ import { z } from "zod";
 import { isValidDate, normalizeInstant } from "../datetime";
 import type { IntakeFieldDef, SessionType } from "../config-schema";
 
+/** The part of a session type the schema needs. Works with the server config type AND the public one (null fees). */
+export type BookingSchemaType = Pick<
+  SessionType,
+  "kind" | "commonFieldsProfile" | "intakeExtraFields" | "locationOptions" | "allowOwnLocation" | "allowHelpMeChoose" | "durationMin"
+> & {
+  maxPeople?: number | null;
+  extraPersonFeeCents?: number | null;
+  durationOptionsMin?: number[] | null;
+};
+
 const PHONE_MSG = "Enter a 10-digit US phone number, or a number starting with + and the country code";
 
 export function normalizePhone(value: string): string {
@@ -63,7 +73,7 @@ export function fieldSchema(def: IntakeFieldDef, required: boolean): z.ZodType {
 }
 
 export interface BookingSchemaArgs {
-  type: SessionType;
+  type: BookingSchemaType;
   catalogue: IntakeFieldDef[];
   portfolioOptOutEnabled: boolean;
 }
@@ -163,7 +173,7 @@ export function buildBookingSchema({ type, catalogue, portfolioOptOutEnabled }: 
 
     const total = o.people.adults + o.people.children; // pets are not people
     if (total < 1) add(["people", "adults"], "At least one person is needed");
-    if (type.maxPeople !== null && type.extraPersonFeeCents === undefined && total > type.maxPeople) {
+    if (type.maxPeople != null && type.extraPersonFeeCents == null && total > type.maxPeople) {
       add(["people", "adults"], `This session is for up to ${type.maxPeople} people`);
     }
 
