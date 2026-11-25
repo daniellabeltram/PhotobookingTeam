@@ -1,0 +1,70 @@
+/* Design tokens (docs/design/tokens.md). All values are [PLACEHOLDER] until Daniella's brand arrives. */
+:root {
+  color-scheme: light;
+
+  --color-bg: #fbf8f4;
+  --color-surface: #ffffff;
+  --color-sand: #f1eae2;
+  --color-selected: #efe3da;
+  --color-text: #2b2623;
+  --color-text-muted: #665d56;
+  --color-primary: #6f4a38;
+  --color-primary-hover: #5a3a2b;
+  --color-on-primary: #ffffff;
+  --color-border: #d9d0c7;
+  --color-border-strong: #8a7f76;
+  --color-focus: #1f5fa8;
+  --color-error: #b3261e;
+  --color-error-bg: #fdedeb;
+  --color-success: #2f6b4f;
+  --color-success-bg: #e8f3ec;
+  --color-warning: #7a4b00;
+  --color-warning-bg: #fff3dc;
+  --color-info: #1f4f8a;
+  --color-info-bg: #e8f0fa;
+  --color-neutral: #4a423c;
+  --color-neutral-bg: #ede7e0;
+
+  --font-heading: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  --text-display: 2rem;
+  --text-display-lh: 2.375rem;
+  --text-h2: 1.5rem;
+  --text-h2-lh: 1.875rem;
+  --text-h3: 1.125rem;
+  --text-h3-lh: 1.5rem;
+  --text-body: 1rem;
+  --text-body-lh: 1.5rem;
+  --text-small: 0.875rem;
+  --text-small-lh: 1.25rem;
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4rem;
+
+  --gutter: 1rem;
+  --content-max: 35rem;
+  --admin-max: 70rem;
+
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-pill: 999px;
+
+  --shadow: 0 1px 3px rgb(43 38 35 / 0.12);
+  --tap: 2.75rem;
+  --control-h: 3rem;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --gutter: 1.5rem;
+    --text-display: 2.5rem;
+    --text-display-lh: 2.875rem;
+  }
+}
