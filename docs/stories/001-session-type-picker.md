@@ -20,6 +20,7 @@
 ## Notes / open questions
 - [PLACEHOLDER] values used: `duration_min`, `price_from`, `deposit`, included items, `active` for all five types (docs/04 §1).
 - Events show `price_from` as a per-hour rate with the minimum length ("from $[price_from]/hour, [duration_min] minimum").
+- Events have `booking_mode: request` (decided by Daniella 2026-11-25, story 020). The Events card should say "Request to book — Daniella replies within [request_response_days] days", and its select action should read "Request this date" or similar, so the client knows before they start (ux-designer to finalise the copy).
 - Questions for Daniella: final card descriptions and "what's included" wording.
 
 ## Links

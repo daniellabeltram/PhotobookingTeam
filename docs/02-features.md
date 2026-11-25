@@ -16,6 +16,7 @@ Scope is split into **Version 1 (must-have)**, **Version 1.1 (soon after launch)
 | 1.5 | **Policy acknowledgement** | A required checkbox with the policies in a collapsible summary and a link to the full text. The policy version and the time it was accepted are stored with the booking. |
 | 1.6 | **Confirmation screen** | Shows a booking reference, the date and time in Eastern, the location, and next steps. |
 | 1.7 | **Confirmation email** | Sent to the client, with a copy to Daniella. Includes an "Add to calendar" (.ics) attachment and how-to-reschedule instructions. |
+| 1.8a | **Events approval (request mode)** | Decided by Daniella 2026-11-25. Events bookings start as *Requested* with the slot held. Daniella approves (deposit link sent) or declines (slot freed) from admin. Other types book instantly. See story 020. |
 | 1.8 | **Deposit step (simple)** | After booking, the client is shown and emailed a **payment link** (for example a Stripe Payment Link) for that session's deposit. The booking stays *Pending deposit* until Daniella marks it paid. Fully integrated checkout comes in v1.1. |
 
 ### Admin page
@@ -66,7 +67,7 @@ Scope is split into **Version 1 (must-have)**, **Version 1.1 (soon after launch)
 | **Client self-reschedule and cancel link** | A secure link in the confirmation email that applies the policy rules automatically (for example, free reschedule more than 72 hours out). |
 | **Weather reschedule tool** | One click in admin marks a session weather-affected, emails the client, and offers open slots without a fee. |
 | **Holiday Minis "event" mode** | Daniella defines a mini day (date, location, theme, slot length, buffer) and the app generates back-to-back slots, showing "X spots left". |
-| **Request vs instant booking per type** | For example, Events require approval while the other types confirm instantly. |
+| **Request vs instant booking for other types** | Events approval is already in v1 (decided 2026-11-25). v1.1 makes the mode editable per type in admin. |
 | **Editable content in admin** | Edit session types, prices and policy text without a redeploy. |
 
 ## Later

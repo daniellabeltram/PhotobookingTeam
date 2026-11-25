@@ -16,6 +16,7 @@
 
 ## Notes / open questions
 - The file holds PII; the admin guide should tell Daniella to store it securely.
+- The status column can hold `requested` and `declined` (Events request mode, story 020). The Requested and Declined filters from story 011 apply to the export like any other filter.
 
 ## Links
 Design: docs/design/ (TBD) · API: docs/api.md (TBD) · Tests: docs/test-plans/ (TBD)

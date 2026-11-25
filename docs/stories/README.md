@@ -20,13 +20,14 @@ Each story uses the `requirements-writing` template. Policy values are reference
 | [010](010-admin-login.md) | Admin login and access control | v1 | P0 | ready | 1.9 |
 | [011](011-admin-booking-list.md) | Admin booking list with filters | v1 | P0 | ready | 1.10 |
 | [012](012-admin-booking-detail.md) | Admin booking detail | v1 | P0 | ready | 1.11 |
-| [013](013-admin-status-changes.md) | Admin status changes (mark paid, confirm, cancel, complete) | v1 | P0 | ready | 1.12 |
+| [013](013-admin-status-changes.md) | Admin status changes (approve, decline, mark paid, confirm, cancel, complete) | v1 | P0 | ready | 1.12 |
 | [014](014-admin-reschedule.md) | Admin reschedule a booking | v1 | P1 | ready | 1.10 / domain rules |
 | [015](015-admin-blocked-times.md) | Admin blocked dates and times | v1 | P0 | ready | 1.13 |
 | [016](016-admin-csv-export.md) | CSV export | v1 | P1 | ready | 1.14 |
 | [017](017-spam-protection.md) | Spam protection (honeypot and rate limit) | v1 | P0 | ready | Platform |
 | [018](018-privacy-notice.md) | Privacy notice | v1 | P0 | ready | Platform |
 | [019](019-accessibility-mobile-baseline.md) | Accessibility and mobile baseline (WCAG 2.1 AA, 375px) | v1 | P0 | ready | Platform |
+| [020](020-events-approval-request-mode.md) | Events approval (request mode): `requested`, approve, decline | v1 | P0 | ready | v1.1 "request/instant per type", moved to v1 for Events by Daniella 2026-11-25 |
 
 ## Suggested build order
 Dependencies first; items in the same phase can run in parallel. Story 019 applies to every phase and is checked at each story's QA sign-off, with a full audit before release.
@@ -36,7 +37,7 @@ Dependencies first; items in the same phase can run in parallel. Story 019 appli
 | 1. Foundations | 001, 002, 010 | Config, slot engine and admin auth everything else depends on |
 | 2. Booking core | 004, 005, 006, 007, 017 | Atomic booking with intake, policy acceptance and spam guard — the core promise |
 | 3. After booking | 008, 009, 018 | Email + .ics, payment link, privacy notice (needed before any real client data) |
-| 4. Admin | 011, 012, 013, 015, 003 | Daniella manages bookings, blocks and mini slots (003 needs admin auth and the slot engine) |
+| 4. Admin | 011, 012, 013, 020, 015, 003 | Daniella manages bookings, Events requests, blocks and mini slots (020 builds on 007–009 and 013; 003 needs admin auth and the slot engine) |
 | 5. Finish | 016, 014 | P1: export and reschedule |
 | Release gate | 019 full audit | Accessibility, devices and the 5-minute booking test |
 
@@ -47,20 +48,22 @@ Dependencies first; items in the same phase can run in parallel. Story 019 appli
 | Time to book on a phone | median < 5 min | Usability test with 5 phone users (019 #11) |
 | Bookings needing a follow-up email for basics | 0 | Daniella reviews the first 20 bookings: intake answered every required question |
 | Bookings without policy acceptance | 0 | Server rejects them (006 #4); spot-check in CSV |
+| Events requests answered within `request_response_days` | 100% | Count of "Reply overdue" flags in admin (020 #9); review monthly |
 
 ## Config names referenced
 Per type: `duration_min`, `buffer_min`, `price_from`, `deposit`, `max_people`, `extra_person_fee`, `booking_mode`, `intake_extra_fields`, `location_options`, `active`, `booking_horizon_days`.
 Global: `timezone` (America/New_York), `working_days`, `session_windows`, `slot_interval_min`, `minimum_notice_hours`, `max_sessions_per_day`, `unpaid_hold_hours`, `policy_version`, `policy_summary_text`, `policy_full_text`.
-**Proposed new fields** (architect to add to the config schema): `duration_options_min` (Events lengths), `deposit_payment_link` (per type), `what_to_bring_text` (per type), `email_from_name`, `email_from_address`, `admin_notification_email`, `admin_allowlist`, `booking_rate_limit`, `data_retention_months`, `portfolio_opt_out_enabled`.
+**Proposed new fields** (architect to add to the config schema): `duration_options_min` (Events lengths), `deposit_payment_link` (per type), `what_to_bring_text` (per type), `email_from_name`, `email_from_address`, `admin_notification_email`, `admin_allowlist`, `booking_rate_limit`, `data_retention_months`, `portfolio_opt_out_enabled`, `request_response_days` (global; the reply time promised to Events requests, not yet in docs/04).
+**Booking fields used for request mode:** `requested_at`, `approved_at` (story 020). `booking_mode` values in v1: Events `request`, all other types `instant`.
 All business values are `[PLACEHOLDER]` until Daniella confirms them.
 
 ## v1 scope decisions
 Judgment calls made while writing these stories (2026-11-25). The orchestrator should confirm the ones marked ★ with Daniella, because they shape what she sees.
 
-1. ★ **All session types book instantly in v1, including Events.** Request/approval mode is v1.1 (02). Events start in `pending_deposit` like the others; if an event doesn't suit, Daniella cancels it (013). This contradicts the draft "Request (approval needed)" for Events in docs/04, so Daniella should confirm. If she wants approval for Events in v1, it adds a `requested` status and approve/decline actions (about one extra story).
+1. **Decided by Daniella 2026-11-25: Events need her approval in v1 (request mode).** Portraits, Couples, Families and Holiday Minis book instantly. An Events booking starts as `requested` and its slot is reserved at once. Daniella approves it (→ `pending_deposit`, and the client gets the retainer link) or declines it (→ `declined`, the slot is freed, and the client gets a polite email). The client's screen and email say it's a request and give the reply time (`request_response_days`). Requests don't expire automatically; admin shows how long each has waited. See story 020. This moves part of the v1.1 "request/instant per type" item in docs/02 into v1, for Events only.
 2. **Events pick a coverage length** (from `duration_options_min`, minimum `duration_min`) before seeing times, so availability is accurate. The deposit shown is an estimate: `deposit` % × hourly `price_from` × hours.
 3. **Holiday Minis:** Daniella adds mini slots by hand (003); the generator is v1.1. Mini slots block other session types at those times. Minis don't count toward `max_sessions_per_day`, and working days/windows don't apply to them. "Spots left" is shown per mini date because it's cheap with manual slots. Minis are paid in full and show "Pending payment" until marked paid.
-4. ★ **No automatic release of unpaid bookings in v1.** Bookings older than `unpaid_hold_hours` are flagged "Deposit overdue" and Daniella cancels them. Auto-expiry moves to v1.1 (with integrated checkout). Risk: an unpaid booking holds a mini slot until she acts.
+4. **Decided by Daniella 2026-11-25: no automatic release of unpaid bookings in v1.** Bookings that stay in `pending_deposit` longer than `unpaid_hold_hours` are flagged "Deposit overdue", and Daniella cancels them by hand. For Events the clock starts at approval. Auto-expiry is a v1.1 candidate (with integrated checkout). Accepted risk: an unpaid booking holds its slot, including a mini slot, until she acts. Follow-up: docs/04 §2 says unpaid bookings "are released after 48 hours"; the wording should match this behaviour.
 5. **No slot hold while the client fills the form.** The server re-checks at submit and offers the 3 nearest alternatives while keeping their answers (004).
 6. **Admin reschedule (014) is in v1 as P1.** 02 lists "Rescheduled" as a v1 filter, and the domain rules say reschedules are applied by Daniella in admin in v1. Client self-reschedule stays v1.1.
 7. **Status-change emails** ("You're confirmed", cancellation notice) are included in 013, so clients don't need a follow-up email from Daniella.
@@ -69,9 +72,11 @@ Judgment calls made while writing these stories (2026-11-25). The orchestrator s
 10. **Not in v1** (kindly, "not yet"): text search in admin, admin notes, editing intake answers, recurring blocks, CAPTCHA, cookie banner, automatic data deletion. All are v1.1 candidates.
 
 ## Open questions for Daniella
-1. Events: confirm instant booking in v1, or do you need to approve Events before they're held? (decision 1)
-2. Events retainer: one payment link per length, a link where the client types the amount, or you send Event links yourself? (009)
-3. Is it OK that unpaid bookings are flagged, not released automatically, in v1? (decision 4)
+Answered 2026-11-25: Events approval (now decision 1) and unpaid bookings flagged, not auto-released (now decision 4).
+
+1. Events requests: how many days should we promise for a reply (`request_response_days`), and are they calendar or business days? (020)
+2. Events retainer: one payment link per length, a link where the client types the amount, or you send Event links yourself? This is now sent in the approval email. (009, 020)
+3. docs/04 §2 says unpaid bookings "are released after 48 hours", but in v1 they are flagged and you cancel them by hand. How should that sentence read? (decision 4)
 4. Holiday Minis: we're unlikely to be live for the 2026 season (it's already late November). Plan for 2027? Should `minimum_notice_hours` apply to minis?
 5. Session windows per month (e.g. summer mornings and golden hour) — what times? Or do you need sunrise/sunset-based times?
 6. Confirmation email sender name and address; where your new-booking notices should go; full intake in your notice email or just a link to admin (proposed: link only)?
