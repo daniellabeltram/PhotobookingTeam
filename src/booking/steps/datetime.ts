@@ -1,7 +1,8 @@
+import { emailLink } from '../../components/links';
 import { h, clear } from '../../lib/dom';
 import { getAvailability, ApiError } from '../../lib/api';
 import { todayEt } from '../../lib/datetime';
-import { addMonths, compareYmd, firstOfMonth, lastOfMonth, longDay, monthName, monthKey } from '../../lib/calendar-math';
+import { compareYmd, firstOfMonth, lastOfMonth, longDay, monthName, monthKey } from '../../lib/calendar-math';
 import type { Availability, AvailabilityDay, Slot } from '../../lib/types';
 import { createCalendar, type CalendarDay } from '../../components/calendar';
 import { enableRadioKeys, setInitialTabStop } from '../../components/roving';
@@ -50,11 +51,10 @@ export function renderDateStep(ctx: FlowCtx): HTMLElement {
   const cal = createCalendar({
     getDay: dayInfo,
     today,
-    onSelect: (date) => { viewDate = date; cal.show(currentMonth, chosenDate(), date, true); renderTimes(true); },
+    onSelect: (date) => { viewDate = date; cal.show(currentMonth, date, date, true); renderTimes(true); },
     onNavigate: (month, focus) => { void loadMonth(month, focus); },
   });
   let currentMonth = ctx.state.slot ? firstOfMonth(ctx.state.slot.localDate) : (ctx.state.month ?? (isMini && type.nextMiniDates?.[0] ? firstOfMonth(type.nextMiniDates[0].date) : firstOfMonth(today)));
-  const chosenDate = (): string | null => ctx.state.slot?.localDate ?? null;
 
   function syncNext(): void {
     next.setAttribute('aria-disabled', String(!ctx.state.slot));
@@ -111,7 +111,7 @@ export function renderDateStep(ctx: FlowCtx): HTMLElement {
       monthNote.append(
         h('div', { class: 'alert alert-info', role: 'status' },
           h('h2', null, 'No openings right now'),
-          h('p', null, 'New dates are added often. Email ', h('a', { href: `mailto:${ctx.config.business.contactEmail}` }, ctx.config.business.contactEmail), ' and Daniella will help you find a time.'),
+          h('p', null, 'New dates are added often. Email ', emailLink(ctx.config.business.contactEmail), ' and Daniella will help you find a time.'),
           h('button', { type: 'button', class: 'btn btn-secondary', onClick: () => ctx.go(1) }, 'Back to sessions')),
       );
       return;
@@ -120,12 +120,10 @@ export function renderDateStep(ctx: FlowCtx): HTMLElement {
     if (!hasOpen) {
       const target = firstOfMonth(firstOpen);
       const label = monthName(target);
-      monthNote.append(
-        h('p', { role: 'status' }, `No openings in ${monthName(currentMonth)}.`),
-        compareYmd(target, currentMonth) !== 0
-          ? h('button', { type: 'button', class: 'btn btn-secondary', onClick: () => { void loadMonth(target, target, true); } }, `See ${label}`)
-          : null,
-      );
+      monthNote.append(h('p', { role: 'status' }, `No openings in ${monthName(currentMonth)}.`));
+      if (compareYmd(target, currentMonth) !== 0) {
+        monthNote.append(h('button', { type: 'button', class: 'btn btn-secondary', onClick: () => { void loadMonth(target, target, true); } }, `See ${label}`));
+      }
     }
   }
 
@@ -150,10 +148,10 @@ export function renderDateStep(ctx: FlowCtx): HTMLElement {
       firstOpen = data.firstOpenDate;
       loaded = true;
       cal.setBounds(today, horizonEnd);
-      cal.show(currentMonth, chosenDate(), focus ?? null, moveFocus || focus !== undefined);
       if (viewDate && monthKey(viewDate) !== monthKey(currentMonth)) viewDate = null;
       const only = isMini && type!.nextMiniDates?.length === 1 ? type!.nextMiniDates[0]?.date : undefined;
       if (!viewDate && only && days.get(only)?.status === 'open') viewDate = only;
+      cal.show(currentMonth, viewDate, focus ?? null, moveFocus || focus !== undefined);
       renderTimes(false);
       renderMonthNote();
       announce(`${monthName(currentMonth)} ${currentMonth.slice(0, 4)}`);
@@ -203,10 +201,8 @@ export function renderDateStep(ctx: FlowCtx): HTMLElement {
     ctx.go(3);
   });
   root.append(status, cal.el, monthNote, timesPanel, chosen, next);
-  cal.show(currentMonth, chosenDate());
+  cal.show(currentMonth, viewDate);
   renderChosen();
   void loadMonth(currentMonth);
-  // Keep unused helpers referenced for tree-shaking clarity.
-  void addMonths;
   return root;
 }

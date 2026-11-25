@@ -1,3 +1,4 @@
+import { emailLink } from '../../components/links';
 import { h } from '../../lib/dom';
 import { icon } from '../../components/icons';
 import { enableRadioKeys, setInitialTabStop } from '../../components/roving';
@@ -26,7 +27,7 @@ export function renderTypeStep(ctx: FlowCtx): HTMLElement {
   if (types.length === 0) {
     root.append(
       h('h2', null, 'Bookings are paused right now'),
-      h('p', null, 'Please check back soon, or email ', h('a', { href: `mailto:${config.business.contactEmail}` }, config.business.contactEmail), " and we'll sort something out."),
+      h('p', null, 'Please check back soon, or email ', emailLink(config.business.contactEmail), " and we'll sort something out."),
     );
     return root;
   }

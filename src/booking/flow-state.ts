@@ -110,6 +110,7 @@ export function buildBookingBody(
   type: PublicSessionType,
   policyVersion: string,
   honeypot = '',
+  portfolioEnabled = true,
 ): BookingRequestBody {
   const a = state.intake;
   const slot = state.slot;
@@ -145,11 +146,12 @@ export function buildBookingBody(
   if (!short) {
     body.styleNotes = t('styleNotes');
     body.mustHaveShots = t('mustHaveShots');
-    body.portfolioOptOut = a['portfolioOptOut'] === 'true';
+    // The server rejects unknown fields, so only send this when the feature is on.
+    if (portfolioEnabled) body.portfolioOptOut = a['portfolioOptOut'] === 'true';
   }
 
-  const extra: Record<string, Record<string, unknown>> = {};
-  const put = (group: string, key: string, value: unknown): void => {
+  const extra: Record<string, Record<string, string | number | boolean | null>> = {};
+  const put = (group: string, key: string, value: string | number | boolean | null | undefined): void => {
     if (value === undefined) return;
     (extra[group] ??= {})[key] = value;
   };

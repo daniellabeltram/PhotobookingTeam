@@ -75,3 +75,5 @@
 .alt-grid .btn { flex-direction: column; gap: 0; min-height: 3.5rem; }
 .confirm-icon { color: var(--color-success); vertical-align: middle; }
 .prose h2 { margin-top: var(--space-5); }
+.link-row { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); margin-bottom: var(--space-4); }
+.type-list { margin-bottom: var(--space-4); }

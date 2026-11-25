@@ -34,7 +34,7 @@ export function createCalendar(opts: CalendarOptions): CalendarHandle {
   let min: string | null = null;
   let max: string | null = null;
 
-  const caption = h('caption', { class: 'cal-title', 'aria-live': 'polite' });
+  const caption = h('caption', { class: 'sr-only', 'aria-live': 'polite' });
   const tbody = h('tbody');
   const prev = h('button', { type: 'button', class: 'btn btn-secondary', 'aria-label': 'Previous month' }, icon('left'));
   const next = h('button', { type: 'button', class: 'btn btn-secondary', 'aria-label': 'Next month' }, icon('right'));
@@ -125,7 +125,7 @@ export function createCalendar(opts: CalendarOptions): CalendarHandle {
   }
 
   function onKey(ev: KeyboardEvent, date: string): void {
-    let target: string | null = null;
+    let target: string;
     switch (ev.key) {
       case 'ArrowLeft': target = addDaysYmd(date, -1); break;
       case 'ArrowRight': target = addDaysYmd(date, 1); break;

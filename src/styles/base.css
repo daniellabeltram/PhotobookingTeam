@@ -147,3 +147,6 @@ dialog.dialog h2 { font-size: var(--text-h2); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
 }
+
+/* Checkbox and radio labels inside .field keep normal weight and layout. */
+.field > label.choice { display: flex; font-weight: 400; margin-bottom: 0; }

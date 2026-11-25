@@ -15,6 +15,8 @@ export interface FlowCtx {
   notice: string | null;
   update(fn: (s: FlowState) => FlowState): void;
   go(step: StepNo): void;
+  /** Re-renders the current step without adding a history entry. */
+  rerender(): void;
   setConfirmation(c: StoredConfirmation): void;
   reloadConfig(): Promise<void>;
   /** Clears everything and returns to step 1. */

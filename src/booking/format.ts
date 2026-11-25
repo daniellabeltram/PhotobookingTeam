@@ -4,7 +4,7 @@ import { shortDay, longDay } from '../lib/calendar-math';
 import { renderPolicySummary } from '../../shared/policy-render';
 
 export function durationLabel(min: number): string {
-  if (min >= 60 && min % 60 === 0) {
+  if (min >= 120 && min % 60 === 0) {
     const hours = min / 60;
     return hours === 1 ? '1 hour' : `${hours} hours`;
   }

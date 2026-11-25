@@ -1,5 +1,4 @@
 import { h, clear } from '../../lib/dom';
-import { icon } from '../../components/icons';
 import { announceUrgent } from '../../components/live';
 import { backRow, progress, stepHeading, summaryStrip } from '../chrome';
 import { slotShort } from '../format';
@@ -69,6 +68,5 @@ export function renderIntakeStep(ctx: FlowCtx): HTMLElement {
     form.showAll(errs);
     showSummary(errs);
   }
-  void icon;
   return root;
 }
