@@ -5,6 +5,7 @@ import { acceptPolicies, chooseSession, fillIntake, pickFirstDayAndTime, submitB
 import { adminLoggedIn, adminApi, seedBooking } from "./support/admin";
 
 async function scan(page: Page, name: string) {
+  await page.waitForTimeout(600); // let CSS transitions settle so axe does not sample a mid-transition colour
   const r = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
   const bad = r.violations.filter((v) => v.impact === "serious" || v.impact === "critical");
   expect(bad.map((v) => `${name}: ${v.id} (${v.impact}) ${v.nodes.slice(0, 3).map((n) => n.target.join(" ")).join(" | ")}`), `${name} axe`).toEqual([]);

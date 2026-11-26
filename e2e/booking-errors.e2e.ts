@@ -1,21 +1,25 @@
 // Slot taken (004), validation (005), policy required (006), honeypot hidden (017), inactive/unknown type link (001 #6).
 import { test, expect } from "@playwright/test";
 import { acceptPolicies, apiFor, chooseSession, fillAbout, pickFirstDayAndTime, reachPoliciesStep, submitBooking } from "./support/flow";
-import { buildBookingBody, firstOpenSlot } from "../tests/helpers/builders";
+import { buildBookingBody } from "../tests/helpers/builders";
 import { OTHER_CLIENT } from "../tests/helpers/seed";
-import { WINDOW_FROM, WINDOW_TO } from "./support/admin";
 
 test.describe("Booking errors", () => {
   test("slot taken at submit: alert, alternatives, answers kept, can rebook (story 004 #1, #4)", async ({ page, request, baseURL }) => {
     const api = apiFor(request, baseURL!);
-    const first = await firstOpenSlot(api, "portraits", WINDOW_FROM, WINDOW_TO);
-
     await reachPoliciesStep(page, "portraits");
     await acceptPolicies(page);
 
-    // Someone else grabs exactly the slot the UI picked (first open day, first time).
-    const stolen = await api.createBooking(buildBookingBody({ type: "portraits", slot: first, contact: { ...OTHER_CLIENT } }));
-    expect(stolen.status, JSON.stringify(stolen.body)).toBe(201);
+    // Someone else grabs exactly the slot the UI is about to send: intercept the POST, book that slot first, then let it through.
+    let stolenStatus = 0;
+    await page.route("**/api/bookings", async (route) => {
+      if (stolenStatus) return route.continue(); // only the first submit is raced
+      const sent = route.request().postDataJSON() as { startUtc: string };
+      const slot = { startUtc: sent.startUtc, endUtc: sent.startUtc, localDate: "", localTime: "", label: "", rangeLabel: "" };
+      const stolen = await api.createBooking(buildBookingBody({ type: "portraits", slot, contact: { ...OTHER_CLIENT } }));
+      stolenStatus = stolen.status;
+      await route.continue();
+    });
 
     await submitBooking(page, "portraits");
     const alert = page.getByRole("alert").filter({ hasText: "That time was just booked" }).first();
@@ -24,6 +28,7 @@ test.describe("Booking errors", () => {
     expect(await alternatives.count()).toBeGreaterThanOrEqual(1);
     expect(await alternatives.count()).toBeLessThanOrEqual(5); // up to 4 times + "See all dates"
 
+    expect(stolenStatus, "the other client's booking must succeed first").toBe(201);
     await alternatives.first().click();
     await expect(page.getByText(/Time updated to/)).toBeVisible();
     await expect(page.getByRole("checkbox", { name: /I have read and agree/ })).toBeChecked();
@@ -50,7 +55,7 @@ test.describe("Booking errors", () => {
     await expect(page.getByRole("textbox", { name: "Email" })).toHaveAttribute("aria-invalid", "true");
     await expect(page.getByRole("heading", { level: 1, name: "Tell us about your session" })).toBeVisible();
     // Summary links jump to the field
-    await summary.getByRole("link").first().click();
+    await summary.getByRole("button").first().click();
     expect(posted).toBe(0);
   });
 

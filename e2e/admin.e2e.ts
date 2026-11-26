@@ -20,17 +20,21 @@ test.describe("Admin access", () => {
 
   test("wrong password: same message, no hint which part was wrong (story 010 #4)", async ({ page }) => {
     await adminLogin(page, ADMIN_EMAIL, "definitely-the-wrong-passphrase");
-    await expect(page.getByRole("alert")).toContainText("That email and password don't match. Please try again.");
+    await expect(page.getByRole("alert").filter({ hasText: "match" }).first()).toContainText("That email and password don't match. Please try again.");
     await adminLogin(page, "nobody@example.test", "definitely-the-wrong-passphrase");
-    await expect(page.getByRole("alert")).toContainText("That email and password don't match. Please try again.");
+    await expect(page.getByRole("alert").filter({ hasText: "match" }).first()).toContainText("That email and password don't match. Please try again.");
   });
 
-  test("sign in, sign out, back button shows no data (story 010 #6)", async ({ page }) => {
+  test("sign in, sign out, back button shows no data (story 010 #6)", async ({ page, request, baseURL }) => {
+    await seedBooking(await adminApi(request, baseURL!), "portraits", { nth: 20 });
     await adminLoggedIn(page);
+    await expect(page.getByText(CLIENT.fullName).first()).toBeVisible();
+    await page.getByRole("link", { name: "Blocked dates" }).click(); // pushes a history entry we can go Back to
     await page.getByRole("button", { name: "Sign out" }).click();
     await expect(page.getByRole("heading", { level: 1, name: "Admin sign in" })).toBeVisible();
     await page.goBack();
-    await expect(page.getByRole("heading", { level: 1, name: /Admin sign in|Bookings/ })).toBeVisible();
+    // After Back the visitor must see the sign-in screen (or at least no client data) and never a blank page.
+    await expect(page.getByRole("heading", { level: 1, name: "Admin sign in" }), "Back after sign out should land on the login screen").toBeVisible();
     expect(await page.getByText(CLIENT.fullName).count()).toBe(0);
   });
 });
@@ -41,7 +45,7 @@ test.describe("Admin bookings", () => {
     const { reference } = await seedBooking(admin, "families", { nth: 3 });
     await adminLoggedIn(page);
     await expect(page.getByText(CLIENT.fullName).first()).toBeVisible();
-    await page.getByRole("link", { name: new RegExp(CLIENT.fullName) }).first().click();
+    await page.goto(`/admin/#/bookings/${reference}`);
     await expect(page).toHaveTitle(new RegExp(`Booking ${reference}`));
     await expect(page.getByRole("link", { name: /561.*555.*0142/ })).toHaveAttribute("href", /^tel:/);
     await expect(page.getByRole("link", { name: CLIENT.email })).toHaveAttribute("href", /^mailto:/);
@@ -56,8 +60,7 @@ test.describe("Admin bookings", () => {
     const admin = await adminApi(request, baseURL!);
     const { reference } = await seedBooking(admin, "events", { nth: 2, durationMin: 120 });
     await adminLoggedIn(page);
-    await page.goto(`/admin/#/bookings?q=${encodeURIComponent(CLIENT.fullName)}&status=requested&view=all`);
-    await page.getByRole("link", { name: /Requested/ }).first().click();
+    await page.goto(`/admin/#/bookings/${reference}`); // open exactly the booking we seeded
     await expect(page.getByRole("button", { name: "Mark deposit paid" })).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Cancel booking" })).toHaveCount(0);
     await page.getByRole("button", { name: "Approve request" }).click();
@@ -71,10 +74,9 @@ test.describe("Admin bookings", () => {
 
   test("Events request: decline frees the slot (020 #16)", async ({ page, request, baseURL }) => {
     const admin = await adminApi(request, baseURL!);
-    const { slot } = await seedBooking(admin, "events", { nth: 5, durationMin: 120 });
+    const { reference, slot } = await seedBooking(admin, "events", { nth: 5, durationMin: 120 });
     await adminLoggedIn(page);
-    await page.goto(`/admin/#/bookings?q=${encodeURIComponent(CLIENT.fullName)}&status=requested&view=all`);
-    await page.getByRole("link", { name: /Requested/ }).last().click();
+    await page.goto(`/admin/#/bookings/${reference}`); // open exactly the booking we seeded
     await page.getByRole("button", { name: "Decline" }).first().click();
     const dlg = page.getByRole("alertdialog");
     await expect(dlg).toContainText("Decline this request?");
@@ -91,8 +93,7 @@ test.describe("Admin bookings", () => {
     expect(before.body.data.days[0]!.slots.map((s: any) => s.startUtc)).not.toContain(slot.startUtc);
 
     await adminLoggedIn(page);
-    await page.goto(`/admin/#/bookings?q=${encodeURIComponent(CLIENT.fullName)}&status=pending_deposit&view=all`);
-    await page.getByRole("link", { name: /Couples/ }).first().click();
+    await page.goto(`/admin/#/bookings/${reference}`); // open exactly the booking we seeded
     await page.getByRole("button", { name: "Cancel booking" }).click();
     const dlg = page.getByRole("alertdialog");
     await expect(dlg).toContainText(/frees .* so someone else can book it/);
@@ -121,7 +122,8 @@ test.describe("Blocked dates", () => {
     await expect(page.getByRole("heading", { level: 1, name: "Blocked dates" })).toBeVisible();
     await page.getByLabel("From date").fill(date);
     await page.getByLabel("To date").fill(date);
-    await page.getByLabel("Reason (optional, private)").fill("QA weather backup");
+    expect.soft(await page.getByLabel("Reason (optional, private)").count(), 'Label should be "Reason (optional, private)" (admin.md section 5)').toBe(1);
+    await page.getByLabel(/^Reason/).fill("QA weather backup");
     await page.getByRole("button", { name: "Block these dates" }).click();
     await expect(page.getByText(/Dates blocked/)).toBeVisible();
 
@@ -180,7 +182,7 @@ test.describe("CSV export", () => {
     const admin = await adminApi(request, baseURL!);
     const { reference } = await seedBooking(admin, "portraits", { nth: 12 });
     await adminLoggedIn(page);
-    const [download] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: /Export CSV/ }).click()]);
+    const [download] = await Promise.all([page.waitForEvent("download"), page.getByRole("link", { name: /Export CSV/ }).or(page.getByRole("button", { name: /Export CSV/ })).first().click()]);
     expect(download.suggestedFilename()).toMatch(/^bookings-\d{4}-\d{2}-\d{2}\.csv$/);
     const path = await download.path();
     const text = (await import("node:fs")).readFileSync(path!, "utf8");

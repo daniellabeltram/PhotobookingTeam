@@ -33,7 +33,8 @@ export async function pickFirstDayAndTime(page: Page): Promise<string> {
   await expect(page.getByRole("grid")).toBeVisible(); // wait for the calendar before counting days
   await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
   for (let i = 0; i < 8; i++) {
-    if (await day.count()) break;
+    // Availability loads after the grid renders: give each month a moment to show open days before paging on.
+    if (await day.first().waitFor({ state: "visible", timeout: 5000 }).then(() => true, () => false)) break;
     const next = page.getByRole("button", { name: "Next month" });
     if (await next.isDisabled().catch(() => true)) break;
     await next.click();
@@ -43,8 +44,11 @@ export async function pickFirstDayAndTime(page: Page): Promise<string> {
   await day.first().click();
   const times = page.getByRole("radiogroup", { name: /Available times/i }).locator('[role="radio"], button');
   await expect(times.first()).toBeVisible();
-  await times.first().click();
-  await expect(page.getByText(/You chose .* Eastern/i)).toBeVisible();
+  // The time list is re-rendered while loading; retry the click until the choice sticks.
+  await expect(async () => {
+    await times.first().click({ timeout: 3000 });
+    await expect(page.getByText(/You chose .* Eastern/i)).toBeVisible({ timeout: 2000 });
+  }).toPass({ timeout: 30_000 });
   return label;
 }
 
