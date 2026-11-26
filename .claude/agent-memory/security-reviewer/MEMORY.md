@@ -37,7 +37,7 @@ keep notes at threat-model level, no exploit recipes for unfixed issues, never a
   q= in URLs, password tool CSP, iteration bounds, childrenAges optional, IPv6 /64 bucketing.
 - Detail lives in the T-007 handoff (orchestrator has it); board task T-007.
 
-## Pre-release code review 2026-11-26 (v1, feature/v1): verdict BLOCK, one item
+## Pre-release code review 2026-11-26 (v1, feature/v1): first BLOCK, then OK after re-review
 - Verified in code: H1, H3, M1, M2, M3 (code), M4, L2-L4, L6, L9; admin guard on every admin
   function with a config-derived path x method 401 test; bundle has no secrets or maps; public
   endpoints return no other clients' data; history scan found no real keys. npm audit: 0.
@@ -47,6 +47,11 @@ keep notes at threat-model level, no exploit recipes for unfixed issues, never a
 - Open (Medium/Low): client-typed free text still reaches outbound client email/.ics (relay);
   idempotency replay records keep a copy of booking output beyond "delete client data"; CI dist
   scan pattern collides with the password tool's help text (fix the text, never loosen the scan).
+- Re-review 2026-11-26 (a31fa6d, 04406aa): H-1, L-1, L-2, L-3, L-4, M-1 verified fixed (deny-list by
+  value + base64url format + repo-scan guard test; own-location text no longer in client email/.ics;
+  idem records hold no location text and are purged on delete; dist scan runs in the Netlify build).
+  Verdict changed to OK TO SHIP (code). Still open before production: M6 ops checklist (devops).
+  Lesson: a replay lookup placed before the rate limit is fine only if it needs key AND exact body.
 - Not built (known): L5 retention flag, "sign out everywhere" UI (valid-after check exists).
 
 ## Accepted risks (need Daniella's OK, dated)
