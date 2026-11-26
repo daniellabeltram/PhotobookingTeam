@@ -17,7 +17,7 @@
 | **Portraits** (individual, senior, headshot, maternity) | 60 min `[PLACEHOLDER]` | $350 `[PLACEHOLDER]` | $100 `[PLACEHOLDER]` | 1 location, up to 2 outfits, ~25 edited digital images `[PLACEHOLDER]` | 1–2 `[PLACEHOLDER]` | Instant |
 | **Couples** (engagement, anniversary) | 60 min `[PLACEHOLDER]` | $400 `[PLACEHOLDER]` | $100 `[PLACEHOLDER]` | 1 location, up to 2 outfits, ~35 edited images `[PLACEHOLDER]` | 2 | Instant |
 | **Families** | 60 min `[PLACEHOLDER]` | $450 `[PLACEHOLDER]` | $150 `[PLACEHOLDER]` | 1 location, ~40 edited images `[PLACEHOLDER]` | Up to 6; +$25 per extra person `[PLACEHOLDER]` | Instant |
-| **Events** (birthdays, showers, corporate, small celebrations) | 2-hour minimum `[PLACEHOLDER]` | $250 per hour `[PLACEHOLDER]` | 50% of estimated total `[PLACEHOLDER]` | Edited images from the event, number varies `[PLACEHOLDER]` | Any | **Request (approval needed)** `[PLACEHOLDER]` |
+| **Events** (birthdays, showers, corporate, small celebrations) | 2-hour minimum `[PLACEHOLDER]` | $250 per hour `[PLACEHOLDER]` | 50% of estimated total `[PLACEHOLDER]` | Edited images from the event, number varies `[PLACEHOLDER]` | Any | **Request (approval needed)**, decided 2026-11-25. Reply within 2 days `[PLACEHOLDER: request_response_days]` |
 | **Holiday Minis** | 20 min `[PLACEHOLDER]` | $225 `[PLACEHOLDER]` | **Paid in full at booking** `[PLACEHOLDER]` | Themed setup, ~10 edited images `[PLACEHOLDER]` | Up to 5 + pets `[PLACEHOLDER]` | Instant, on set mini dates only |
 
 ### Scheduling rules
@@ -45,7 +45,7 @@
 
 - A **non-refundable retainer** of the amount listed above is due to secure your date and time. `[PLACEHOLDER wording; confirm with attorney]`
 - The retainer is **applied to your session fee**; it is not an extra charge.
-- Your booking stays **pending** until the retainer is received. Unpaid bookings are released after **48 hours** `[PLACEHOLDER]`.
+- Your booking stays **pending** until the retainer is received. If the retainer isn't received within **48 hours** `[PLACEHOLDER]`, the booking may be cancelled and the time released. `[PLACEHOLDER wording: in v1 Daniella cancels overdue bookings by hand]`
 - The **remaining balance** is due **on or before the session date** `[PLACEHOLDER]`.
 - Holiday Minis are **paid in full** at booking `[PLACEHOLDER]`.
 - If Daniella Beltram Photography has to cancel and can't offer a suitable new date, the retainer is **refunded in full**.

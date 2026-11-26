@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Lint, types, tests, audit, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      # Never use pull_request_target with secrets in this repo (fork code would run with them).
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run test:tz
+      - run: npm audit --audit-level=high
+      - run: npm run build
+      - name: Scan dist for secrets and source maps
+        run: bash scripts/scan-dist.sh dist
+
+  e2e:
+    name: Playwright (chromium, optional)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Optional: a failure here does not block the checks job. To make it
+    # required, mark this job as a required status check in GitHub branch rules.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e -- --trace off

@@ -2,7 +2,7 @@
 name: software-architect
 description: "Owns technical design: stack choice, data model, API contracts, availability/concurrency design, and Architecture Decision Records. Use before building anything new or when a change crosses front end, back end and infrastructure."
 tools: Read, Write, Edit, Glob, Grep, Bash, WebSearch, WebFetch, Skill
-model: fable
+model: opus
 effort: high
 memory: project
 color: cyan

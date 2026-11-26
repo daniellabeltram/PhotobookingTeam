@@ -33,7 +33,7 @@ Other ways to use the team:
 | `team-builder` (meta) | Scout, Talent Scout | opus | medium | Adds or revises agents and skills | project-context, team-workflow, create-agent |
 | `product-manager` | Priya | opus | medium | Stories, acceptance criteria, scope | project-context, team-workflow, requirements-writing, booking-domain-rules, documentation-standards |
 | `ux-designer` | Luz | sonnet | medium | Flows, wireframes, copy, accessibility | project-context, team-workflow, ux-design-guidelines, booking-domain-rules |
-| `software-architect` | Theo | fable | high | Stack, data model, ADRs, API contracts | project-context, team-workflow, architecture-decisions, booking-domain-rules, security-privacy-checklist, netlify-deployment, documentation-standards |
+| `software-architect` | Theo | opus | high | Stack, data model, ADRs, API contracts | project-context, team-workflow, architecture-decisions, booking-domain-rules, security-privacy-checklist, netlify-deployment, documentation-standards |
 | `frontend-developer` | Kai | sonnet | high | Booking flow and admin UI | project-context, team-workflow, frontend-conventions, ux-design-guidelines, booking-domain-rules, testing-strategy |
 | `backend-developer` | Omar | sonnet | high | Netlify Functions, data, email, payments | project-context, team-workflow, backend-api-conventions, booking-domain-rules, security-privacy-checklist, testing-strategy |
 | `qa-tester` | Quinn | sonnet | medium | Test plans, automated tests, sign-off | project-context, team-workflow, testing-strategy, booking-domain-rules, requirements-writing, ux-design-guidelines |
@@ -43,8 +43,8 @@ Other ways to use the team:
 | `technical-writer` | Paige | haiku | medium | README, admin guide, changelog | project-context, team-workflow, documentation-standards |
 
 ### Why these models
-- **fable** (Claude Fable 5.2, the most capable and most expensive) is used only for the architect. It is called rarely, and its decisions shape everything else.
-- **opus** (Claude Opus 5.5) handles judgment-heavy work where mistakes are costly: orchestration, team design, scope and security.
+- **opus** (Claude Opus 5.5) handles judgment-heavy work where mistakes are costly: orchestration, team design, scope, architecture and security.
+- **fable** (Claude Fable 5.2, the most capable) was planned for the architect, but this account needs usage credits to use it (the call was refused on 2026-11-25), so the architect runs on opus. If credits are added, set `model: fable` in `.claude/agents/software-architect.md`.
 - **sonnet** (Claude Sonnet 5.5) handles everyday building and review: fast and capable at coding.
 - **haiku** (Claude Haiku 5.5) handles high-volume, low-risk documentation upkeep.
 

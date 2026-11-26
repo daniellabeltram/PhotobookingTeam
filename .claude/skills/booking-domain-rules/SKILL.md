@@ -17,7 +17,7 @@ All numbers come from config, seeded from `docs/04-booking-policies.md`. Those v
 ## Slot generation (for a type and a date range)
 1. Start with working days and the windows on each date (in Eastern time).
 2. Generate start times on a fixed grid (e.g. every 30 min) where `start + duration` fits inside the window.
-3. Remove any slot that would overlap an existing active booking **including both buffers** (`[start - buffer, end + buffer)`).
+3. Remove any slot whose gap to an existing active booking (end to start, either side) is less than the **larger** of the two sessions' buffers (`gap < max(bufferA, bufferB)`). Buffers are not added together.
 4. Remove slots that overlap blocked times, fall inside `minimum_notice_hours` of now, fall beyond the booking horizon, or sit on days that have reached `max_sessions_per_day`.
 5. **Holiday Minis:** only on defined mini days, as back-to-back slots of `duration + buffer`, showing the remaining count.
 6. Active bookings are `pending_deposit`, `requested` and `confirmed`. Cancelled bookings free their slot.
@@ -42,6 +42,6 @@ confirmed ──reschedule──▶ confirmed (new slot; history kept as resched
 - In v1 these are applied by Daniella in admin. Automating them is v1.1.
 
 ## Invariants (must always hold, and must be tested)
-- No two active bookings overlap, including buffers.
+- No two active bookings overlap, and every gap between them is at least the larger of their two buffers.
 - No booking without policy acceptance.
 - A booking's displayed time is the same in the confirmation, the email, the `.ics` and admin.

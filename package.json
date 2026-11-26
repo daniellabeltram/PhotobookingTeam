@@ -1,0 +1,42 @@
+{
+  "name": "daniella-beltram-booking",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Booking and intake app for Daniella Beltram Photography",
+  "engines": {
+    "node": ">=22.18 <23"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:tz": "TZ=America/Los_Angeles vitest run && TZ=UTC vitest run",
+    "test:e2e": "playwright test",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "check": "npm run lint && npm run typecheck && npm test",
+    "admin:hash": "node scripts/admin-hash.ts"
+  },
+  "dependencies": {
+    "@netlify/blobs": "11.1.11",
+    "luxon": "3.7.2",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.14.1",
+    "@eslint/js": "10.0.1",
+    "@netlify/functions": "6.1.2",
+    "@playwright/test": "1.65.1",
+    "@types/luxon": "3.7.6",
+    "@types/node": "22.20.7",
+    "eslint": "10.15.0",
+    "globals": "17.14.0",
+    "happy-dom": "21.0.4",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.74.0",
+    "vite": "8.3.8",
+    "vitest": "5.1.1"
+  }
+}
