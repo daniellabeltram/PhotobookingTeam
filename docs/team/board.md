@@ -4,6 +4,7 @@ Maintained by the `orchestrator`. Status values: todo · doing · review · done
 
 | ID | Task | Owner | Status | Links / notes |
 |---|---|---|---|---|
+| T-012 | Preview deploy, launch-gate concurrency run, manual a11y/device checks | devops-engineer, qa-tester | todo | docs/operations.md §6, docs/test-plans/README.md |
 | T-001 | Confirm `[PLACEHOLDER]` values in `docs/04-booking-policies.md` (prices, deposits, windows) | Daniella | todo | Decisions checklist at the end of that file |
 | T-002 | Write user stories for the v1 must-haves | product-manager | done | `docs/stories/` 001–019, plus 020 in progress |
 | T-003 | ADRs 0001–0007 (framework, data store, admin auth, email, payments, time, config) | software-architect | done | `architecture-decisions` skill |
@@ -12,7 +13,7 @@ Maintained by the `orchestrator`. Status values: todo · doing · review · done
 | T-006 | Back end: scaffold, store, all /api functions, email, admin auth, tests | backend-developer | done | Code review: Approve; should-fix items done |
 | T-007 | Security design review (auth, secrets, PII, preview isolation) | security-reviewer | done | 3 High, 6 Medium, 9 Low; fixes assigned to backend, frontend, devops |
 | T-008 | Front end: booking flow, admin, password tool | frontend-developer | done | Code review fixes and QA bugs 2–4 done |
-| T-009 | QA: test plans, e2e, regression suite, sign-off | qa-tester | review | Final sign-off run |
+| T-009 | QA: test plans, e2e, regression suite, sign-off | qa-tester | done | PASS: 442/442 unit+integration, 66/66 e2e (phone + desktop) |
 | T-010 | Code review and final security review | code-reviewer, security-reviewer | done | Security: OK to ship (2026-11-26) |
 | T-011 | README with deploy steps, admin guide, CHANGELOG | technical-writer | done | Commands verified against package.json |
 

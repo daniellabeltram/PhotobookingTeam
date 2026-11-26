@@ -1,6 +1,6 @@
 # Bugs found by QA (v1 release candidate, branch feature/v1)
 
-Run: 2026-11-26, FAKE_NOW 2026-12-01. BUG-1 is closed (by design). Three open product bugs (BUG-2 to BUG-4), all minor or cosmetic. Each is caught by a soft assertion in the e2e suite, so the test fails until it is fixed (tests were not weakened).
+Run: 2026-11-26, FAKE_NOW 2026-12-01. No open bugs. BUG-1 closed by design; BUG-2 to BUG-4 fixed and verified by QA on 2026-11-26. Each is caught by a soft assertion in the e2e suite, so the test fails until it is fixed (tests were not weakened).
 
 ## BUG-1  Closed — by design (orchestrator, 2026-11-26)
 In v1 the .ics goes by email only and the API intentionally returns no calendarUrl. The e2e now asserts the confirmation screen has NO "Add to calendar" and that the confirmation email has the .ics.
@@ -14,7 +14,7 @@ In v1 the .ics goes by email only and the API intentionally returns no calendarU
 **Evidence:** `e2e/booking-happy.e2e.ts` "Portraits/Couples/Families: pick, intake, policies, confirmation, email", soft assertion "Add to calendar on the confirmation screen", both projects.
 **Owner:** frontend-developer (build the .ics client-side or from a link), with software-architect if the API should return a URL.
 
-## BUG-2
+## BUG-2  Fixed, verified by QA 2026-11-26 (e2e passes on phone and desktop)
 **Title:** Events start time is not prefilled from the chosen time on step 2
 **Severity:** minor
 **Env:** feature/v1, both viewports
@@ -24,7 +24,7 @@ In v1 the .ics goes by email only and the API intentionally returns no calendarU
 **Evidence:** `e2e/booking-happy.e2e.ts` "Events: request flow ...", message "Events start time should be prefilled from step 2".
 **Owner:** frontend-developer
 
-## BUG-3
+## BUG-3  Fixed, verified by QA 2026-11-26 (e2e passes on phone and desktop)
 **Title:** Holiday Minis final button says "Book my session" instead of "Book my mini"
 **Severity:** cosmetic
 **Env:** feature/v1, both viewports
@@ -34,7 +34,7 @@ In v1 the .ics goes by email only and the API intentionally returns no calendarU
 **Evidence:** `e2e/booking-happy.e2e.ts` "Holiday Minis: short form, books a mini slot", soft assertion on the button label.
 **Owner:** frontend-developer
 
-## BUG-4
+## BUG-4  Fixed, verified by QA 2026-11-26 (e2e passes on phone and desktop)
 **Title:** Blocked dates: field label is "Reason (optional)", design says "Reason (optional, private)"
 **Severity:** cosmetic
 **Env:** feature/v1, admin, both viewports
