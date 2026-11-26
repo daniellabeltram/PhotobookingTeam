@@ -118,7 +118,7 @@ These steps are written for Daniella. Developers can find the details in `docs/o
    | `ADMIN_EMAIL` | no | Daniella's sign-in email | her email | a test address |
    | `ADMIN_PASSWORD_HASH` | yes | The password hash from step 4 | her hash | a different test hash |
    | `ADMIN_SESSION_SECRET` | yes | Signs sign-in sessions. Changing it signs everyone out. | random value | a different random value |
-   | `ADMIN_TOTP_SECRET` | yes | The second-factor secret from step 4 (recommended) | set | optional |
+   | `ADMIN_TOTP_SECRET` | yes | The second-factor secret from step 4. **Required in production** (the site refuses to start without it) | set | optional |
    | `PUBLIC_BASE_URL` | no | The web address used in email links | `https://book.daniellabeltram.photography` `[PLACEHOLDER domain]` | leave unset |
    | `PAYMENT_LINK_OVERRIDE_URL` | no | Swaps real payment links for test links | **leave unset** | optional test link |
    | `RATE_LIMIT_DISABLED` | no | Turns off form limits for the launch test only | **leave unset** | `1` only during the launch test, then remove it |
