@@ -1,11 +1,26 @@
 // One test per rule in netlify/lib/env.ts (security review H1, H2).
+import { randomBytes } from "node:crypto";
+import { readdirSync, readFileSync, statSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { DEV_PASSWORD_HASH, EnvError, readEnv, type EnvRule } from "../../../netlify/lib/env";
+import {
+  DENIED_SESSION_SECRETS,
+  DENIED_TOTP_SECRETS,
+  DEV_PASSWORD_HASH,
+  DEV_SESSION_SECRET,
+  EnvError,
+  readEnv,
+  SESSION_SECRET_FORMAT,
+  type EnvRule,
+} from "../../../netlify/lib/env";
+import { generateTotpSecret } from "../../../netlify/lib/auth/totp";
+import { ADMIN_SESSION_SECRET as E2E_SEED_SECRET } from "../../helpers/seed";
 
-const STRONG_SECRET = "k7Qw2mVx9pLr4TnB8sYd6HfJ3cZaE5uG1oXiR0vN";
+// Generated per run: a literal here would itself be a secret in the repo (and would have to be denied).
+const STRONG_SECRET = randomBytes(32).toString("base64url");
 // A syntactically valid hash that is NOT the dev hash (600000 iterations)
 const REAL_HASH = "pbkdf2-sha256$600000$AAAAAAAAAAAAAAAAAAAAAA$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
-const TOTP = "JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP";
+const TOTP = generateTotpSecret();
 
 const production = (over: Record<string, string | undefined> = {}) => ({
   APP_ENV: "production",
@@ -125,7 +140,7 @@ describe("env H1: namespaces", () => {
 describe("env H2: weak or placeholder secrets", () => {
   it("rejects a session secret under 32 bytes or with placeholder words (preview and production)", () => {
     expect(rule(production({ ADMIN_SESSION_SECRET: "short-secret" }))).toBe("session_secret_weak");
-    expect(rule(preview({ ADMIN_SESSION_SECRET: "replace-me-with-32-or-more-random-bytes-not-real" }))).toBe("session_secret_weak");
+    expect(rule(preview({ ADMIN_SESSION_SECRET: "x".repeat(60) + "!" }))).toBe("session_secret_weak"); // not base64url
     expect(rule(production({ ADMIN_SESSION_SECRET: "a".repeat(20) + "not-real" + "b".repeat(20) }))).toBe("session_secret_weak");
     expect(rule(production({ ADMIN_SESSION_SECRET: undefined }))).toBe("session_secret_missing");
   });
@@ -150,6 +165,88 @@ describe("env H2: weak or placeholder secrets", () => {
   });
   it("dev defaults never apply in preview or production", () => {
     expect(rule(production({ ADMIN_PASSWORD_HASH: undefined, ADMIN_SESSION_SECRET: undefined, ADMIN_EMAIL: undefined }))).not.toBeNull();
+  });
+});
+
+describe("env H-1: session secrets that exist in the repo are refused in preview and production", () => {
+  it.each(DENIED_SESSION_SECRETS.map((s) => [s]))("denied: %s", (secret) => {
+    expect(rule(production({ ADMIN_SESSION_SECRET: secret }))).toBe("session_secret_denied");
+    expect(rule(preview({ ADMIN_SESSION_SECRET: secret }))).toBe("session_secret_denied");
+  });
+  it("the dev default, the e2e seed and the unit-test secret are on the list", () => {
+    expect(DENIED_SESSION_SECRETS).toContain(DEV_SESSION_SECRET);
+    expect(DENIED_SESSION_SECRETS).toContain(E2E_SEED_SECRET);
+  });
+  it("the denied values still work in local and test (that is what they are for)", () => {
+    expect(rule({ APP_ENV: "test", ADMIN_SESSION_SECRET: E2E_SEED_SECRET })).toBeNull();
+    expect(rule({ APP_ENV: "local", ADMIN_SESSION_SECRET: DEV_SESSION_SECRET })).toBeNull();
+  });
+  it("requires base64url of at least 32 bytes: 43+ characters from [A-Za-z0-9_-]", () => {
+    expect(SESSION_SECRET_FORMAT.test(randomBytes(32).toString("base64url"))).toBe(true);
+    expect(rule(production({ ADMIN_SESSION_SECRET: randomBytes(31).toString("base64url") }))).toBe("session_secret_weak"); // 42 chars
+    expect(rule(production({ ADMIN_SESSION_SECRET: randomBytes(32).toString("base64url") + "=" }))).toBe("session_secret_weak");
+    expect(rule(production({ ADMIN_SESSION_SECRET: randomBytes(32).toString("base64") + "+/" }))).toBe("session_secret_weak");
+    expect(rule(production({ ADMIN_SESSION_SECRET: randomBytes(32).toString("base64url") }))).toBeNull();
+    expect(rule(production({ ADMIN_SESSION_SECRET: randomBytes(48).toString("base64url") }))).toBeNull();
+  });
+  it("GUARD: every session-secret or TOTP literal in the repo's code is on a deny-list", () => {
+    const roots = ["tests", "e2e", "netlify", "config", "scripts", "shared", "src"];
+    const secretRe = /\b(?:ADMIN_SESSION_SECRET|SESSION_SECRET|SECRET)\b\s*[:=]\s*["']([^"'\s]{20,})["']/g;
+    const totpRe = /\bTOTP[A-Z_]*\s*[:=]\s*["']([A-Z2-7]{16,})["']/g;
+    const files: string[] = [];
+    const walk = (dir: string) => {
+      for (const name of readdirSync(dir)) {
+        const p = join(dir, name);
+        if (statSync(p).isDirectory()) walk(p);
+        else if (/\.(ts|js|json)$/.test(name)) files.push(p);
+      }
+    };
+    for (const r of roots) walk(r);
+    files.push(".env.example");
+    const found: { file: string; value: string; kind: "secret" | "totp" }[] = [];
+    for (const file of files) {
+      const text = readFileSync(file, "utf8");
+      for (const m of text.matchAll(secretRe)) found.push({ file, value: m[1]!, kind: "secret" });
+      for (const m of text.matchAll(totpRe)) found.push({ file, value: m[1]!, kind: "totp" });
+    }
+    expect(found.length).toBeGreaterThan(2); // the scan itself works
+    for (const f of found) {
+      const list = f.kind === "secret" ? DENIED_SESSION_SECRETS : DENIED_TOTP_SECRETS;
+      const listed = list.some((d) => f.value === d || (f.kind === "totp" && f.value.startsWith(d)));
+      expect(listed, `${f.file} has a ${f.kind} literal that is not on the deny-list in netlify/lib/env.ts`).toBe(true);
+    }
+  });
+});
+
+describe("env L-1: public and test TOTP secrets are refused in preview and production", () => {
+  it.each(DENIED_TOTP_SECRETS.map((s) => [s]))("denied: %s", (secret) => {
+    expect(rule(production({ ADMIN_TOTP_SECRET: secret }))).toBe("totp_secret_denied");
+    expect(rule(preview({ ADMIN_TOTP_SECRET: secret }))).toBe("totp_secret_denied");
+  });
+  it("also with spaces, lower case, or a longer secret that starts with the public example", () => {
+    expect(rule(production({ ADMIN_TOTP_SECRET: "jbsw y3dp ehpk 3pxp" }))).toBe("totp_secret_denied");
+    expect(rule(production({ ADMIN_TOTP_SECRET: "JBSWY3DPEHPK3PXPAAAAAAAAAAAA" }))).toBe("totp_secret_denied");
+  });
+  it("is allowed in local and test, and a random secret passes", () => {
+    expect(rule({ APP_ENV: "test", ADMIN_TOTP_SECRET: DENIED_TOTP_SECRETS[1] })).toBeNull();
+    expect(rule(production({ ADMIN_TOTP_SECRET: generateTotpSecret() }))).toBeNull();
+  });
+});
+
+describe("env L-4: any platform context except `dev` refuses local and test", () => {
+  it.each([["production"], ["deploy-preview"], ["branch-deploy"], ["staging"], ["anything"]])("context %s", (context) => {
+    expect(rule({ APP_ENV: "local" }, { context })).toBe("app_env_platform_mismatch");
+    expect(rule({ APP_ENV: "test" }, { context })).toBe("app_env_platform_mismatch");
+  });
+  it("`netlify dev` (context dev) may run local with the dev defaults", () => {
+    expect(rule({ APP_ENV: "local" }, { context: "dev" })).toBeNull();
+    expect(readEnv({ APP_ENV: "local" }, { context: "dev" }).adminPasswordHash).toBe(DEV_PASSWORD_HASH);
+  });
+  it("the CONTEXT variable counts too", () => {
+    expect(rule({ APP_ENV: "local", CONTEXT: "production" })).toBe("app_env_platform_mismatch");
+  });
+  it("the dev defaults can never reach a deployed context through local", () => {
+    expect(rule({ APP_ENV: "local", ADMIN_PASSWORD_HASH: undefined, ADMIN_SESSION_SECRET: undefined }, { context: "deploy-preview" })).not.toBeNull();
   });
 });
 

@@ -3,7 +3,7 @@ import { expect, type Page, type APIRequestContext } from "@playwright/test";
 import { Api, type Transport } from "../../tests/helpers/builders";
 import { CLIENT, TYPE_NAMES, type TypeKey } from "../../tests/helpers/seed";
 
-export const AVAILABLE_DAY = /, \d+ times? available/i;
+export const AVAILABLE_DAY = /, (\d+ times? available|\d+ spots? left|last spot)/i;
 
 /** Api client that talks over Playwright's request context (shares nothing with browser cookies). */
 export function apiFor(request: APIRequestContext, baseURL: string): Api {
@@ -30,6 +30,8 @@ export async function chooseSession(page: Page, type: TypeKey) {
 /** Picks the earliest selectable day (paging forward through months) and its first time. Returns the chosen day label. */
 export async function pickFirstDayAndTime(page: Page): Promise<string> {
   const day = page.getByRole("gridcell", { name: AVAILABLE_DAY });
+  await expect(page.getByRole("grid")).toBeVisible(); // wait for the calendar before counting days
+  await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
   for (let i = 0; i < 8; i++) {
     if (await day.count()) break;
     const next = page.getByRole("button", { name: "Next month" });
@@ -130,5 +132,11 @@ export async function reachPoliciesStep(page: Page, type: TypeKey) {
 }
 
 export async function submitBooking(page: Page, type: TypeKey) {
-  await page.getByRole("button", { name: SUBMIT_LABEL[type] }).click();
+  const primary = page.getByRole("button", { name: SUBMIT_LABEL[type] });
+  if (type === "minis") {
+    // Design: "Book my mini". Soft check, then fall back so the rest of the flow is still exercised.
+    expect.soft(await primary.count(), 'Minis submit button should read "Book my mini" (booking-flow.md step 4)').toBe(1);
+    if (!(await primary.count())) return void (await page.getByRole("button", { name: "Book my session" }).click());
+  }
+  await primary.click();
 }

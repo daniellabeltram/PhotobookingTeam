@@ -30,12 +30,18 @@ export function foldLine(line: string): string {
   return parts.join("\r\n");
 }
 
+/**
+ * Location wording for client emails and the .ics. Preset labels are ours and safe to print. Text the client typed is
+ * NEVER echoed (an email from our domain must not be a way to deliver a stranger's words, review M-1): they get
+ * "the location you gave us". Admin still shows the full text.
+ */
+export const OWN_LOCATION_PHRASE = "the location you gave us";
 export function locationText(b: Booking): string {
   switch (b.location.kind) {
     case "suggested":
       return b.location.label;
     case "own":
-      return b.location.text;
+      return OWN_LOCATION_PHRASE;
     case "mini_day":
       return b.location.label;
     case "help_me_choose":

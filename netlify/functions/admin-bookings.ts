@@ -16,6 +16,7 @@ import { applyTransition } from "../lib/domain/transitions";
 import { bookingDetail } from "../lib/domain/views";
 import { sendBookingEmails } from "../lib/email/notify";
 import { HttpError } from "../lib/errors";
+import { purgeIdempotency } from "../lib/idempotency";
 import { fieldErrors, json, readJsonBody, validationFailed } from "../lib/http";
 import { log } from "../lib/log";
 import { getBooking, updateBooking } from "../lib/repos/bookings";
@@ -145,6 +146,7 @@ async function deleteClientData(req: Request, params: Params, rc: AdminContext):
   const now = svc.clock.now();
   if (!allowedActions(cur, now).includes("delete_client_data")) throw invalidTransition(rc, cur);
   const next = await updateBooking(svc.store, cur.id, (b) => wipePii(b, now), { expectedVersion: body.expectedVersion });
+  await purgeIdempotency(svc.store, svc.clock, cur.id).catch(() => log("warn", "idempotency purge failed", { requestId: rc.requestId, bookingId: cur.id, reason: "store_error" }));
   log("info", "client data deleted", { requestId: rc.requestId, bookingId: cur.id, reason: "pii_deleted" });
   return json(200, { booking: detail(rc, next) });
 }

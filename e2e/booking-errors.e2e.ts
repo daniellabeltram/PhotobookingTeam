@@ -18,7 +18,7 @@ test.describe("Booking errors", () => {
     expect(stolen.status, JSON.stringify(stolen.body)).toBe(201);
 
     await submitBooking(page, "portraits");
-    const alert = page.getByRole("alert").filter({ hasText: "That time was just booked" });
+    const alert = page.getByRole("alert").filter({ hasText: "That time was just booked" }).first();
     await expect(alert).toBeVisible();
     const alternatives = alert.getByRole("button");
     expect(await alternatives.count()).toBeGreaterThanOrEqual(1);
@@ -44,9 +44,9 @@ test.describe("Booking errors", () => {
 
     const summary = page.getByRole("alert").filter({ hasText: /Please fix \d+ things? to continue/ });
     await expect(summary).toBeVisible();
-    await expect(page.getByText("Please enter your name.")).toBeVisible();
-    await expect(page.getByText("That email doesn't look right. Check for typos.")).toBeVisible();
-    await expect(page.getByText(/Please enter a phone number we can reach/)).toBeVisible();
+    await expect(page.getByText("Please enter your name.").first()).toBeVisible();
+    await expect(page.getByText("That email doesn't look right. Check for typos.").first()).toBeVisible();
+    await expect(page.getByText(/Please enter a phone number we can reach/).first()).toBeVisible();
     await expect(page.getByRole("textbox", { name: "Email" })).toHaveAttribute("aria-invalid", "true");
     await expect(page.getByRole("heading", { level: 1, name: "Tell us about your session" })).toBeVisible();
     // Summary links jump to the field
@@ -61,7 +61,7 @@ test.describe("Booking errors", () => {
     await fillAbout(page);
     await page.getByRole("spinbutton", { name: /^Adults/ }).fill("5");
     await page.getByRole("button", { name: "Continue" }).click();
-    await expect(page.getByText(/This session fits up to \d+ people/)).toBeVisible();
+    await expect(page.getByText(/This session fits up to \d+ people/).first()).toBeVisible();
     await expect(page.getByRole("heading", { level: 1, name: "Tell us about your session" })).toBeVisible();
   });
 

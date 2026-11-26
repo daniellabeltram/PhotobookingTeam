@@ -5,7 +5,7 @@ import { freshApp } from "../../helpers/app";
 import { ADMIN_EMAIL, ADMIN_PASSWORD } from "../../helpers/seed";
 import { totpCode } from "../../../netlify/lib/auth/totp";
 
-const TOTP_SECRET = "JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP";
+const TOTP_SECRET = "JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP"; // listed in DENIED_TOTP_SECRETS (test only)
 const WRONG = "That email and password don't match. Please try again.";
 const setCookies = (r: { raw: Response }) => r.raw.headers.getSetCookie();
 

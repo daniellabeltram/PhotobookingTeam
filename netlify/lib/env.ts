@@ -26,6 +26,8 @@ export type EnvRule =
   | "admin_email_placeholder"
   | "session_secret_missing"
   | "session_secret_weak"
+  | "session_secret_denied"
+  | "totp_secret_denied"
   | "password_hash_missing"
   | "password_hash_invalid"
   | "password_hash_dev"
@@ -46,7 +48,23 @@ export class EnvError extends Error {
 export const DEV_PASSPHRASE_HINT = "dev-passphrase-change-me";
 export const DEV_PASSWORD_HASH =
   "pbkdf2-sha256$600000$47NM2GmxJ_mzMB7xWHkBSQ$VM0MBCFBavLXXUKWkpncBqF72KBjpf9lhnTRXYAY9sc";
-const DEV_SESSION_SECRET = "local-development-session-secret-0123456789-abcdef";
+export const DEV_SESSION_SECRET = "local-development-session-secret-0123456789-abcdef";
+
+/**
+ * Every session-secret literal that exists in this repository (dev default, e2e seed, unit-test values, the old
+ * .env.example placeholder). Preview and production refuse them even though they are long enough (review H-1).
+ * tests/unit/backend/env.test.ts scans the repo and fails if a new literal appears that is not listed here.
+ */
+export const DENIED_SESSION_SECRETS: readonly string[] = [
+  DEV_SESSION_SECRET,
+  "e2e-session-secret-0123456789abcdef0123456789abcdef", // tests/helpers/seed.ts
+  "unit-test-secret-0123456789-abcdefghijklmnop", // tests/unit/backend/auth.test.ts
+  "replace-me-with-32-or-more-random-bytes-not-real", // the old .env.example value
+];
+/** TOTP secrets that are public (RFC and library examples) or used in tests. A prefix match is refused too. */
+export const DENIED_TOTP_SECRETS: readonly string[] = ["JBSWY3DPEHPK3PXP", "JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP"];
+/** Preview and production secrets are base64url of at least 32 random bytes (43+ characters). */
+export const SESSION_SECRET_FORMAT = /^[A-Za-z0-9_-]{43,}$/;
 const DEV_ADMIN_EMAIL = "admin@example.test";
 
 export const MIN_HASH_ITERATIONS = 600_000;
@@ -115,6 +133,8 @@ export function readEnv(src: Source = process.env, platform: PlatformInfo = {}):
     if (platformContext === "dev" && appEnv === "production") throw new EnvError("app_env_platform_mismatch");
   }
   if (onNetlify && (appEnv === "local" || appEnv === "test")) throw new EnvError("app_env_platform_mismatch");
+  // Any platform context except `netlify dev` refuses local/test, and with them every dev default (review L-4)
+  if (platformContext && platformContext !== "dev" && (appEnv === "local" || appEnv === "test")) throw new EnvError("app_env_platform_mismatch");
 
   const isProd = appEnv === "production";
   const isDeployed = isProd || appEnv === "preview";
@@ -167,7 +187,8 @@ export function readEnv(src: Source = process.env, platform: PlatformInfo = {}):
   if (!adminSessionSecret) throw new EnvError("session_secret_missing");
   if (isDeployed) {
     const lower = adminSessionSecret.toLowerCase();
-    if (Buffer.byteLength(adminSessionSecret, "utf8") < 32 || PLACEHOLDER_WORDS.some((w) => lower.includes(w))) {
+    if (DENIED_SESSION_SECRETS.includes(adminSessionSecret)) throw new EnvError("session_secret_denied");
+    if (!SESSION_SECRET_FORMAT.test(adminSessionSecret) || PLACEHOLDER_WORDS.some((w) => lower.includes(w))) {
       throw new EnvError("session_secret_weak");
     }
   } else if (Buffer.byteLength(adminSessionSecret, "utf8") < 16) {
@@ -186,6 +207,10 @@ export function readEnv(src: Source = process.env, platform: PlatformInfo = {}):
   const adminTotpSecret = val(src, "ADMIN_TOTP_SECRET");
   if (adminTotpSecret && !/^[A-Z2-7]{16,}=*$/i.test(adminTotpSecret.replace(/\s+/g, ""))) throw new EnvError("totp_secret_invalid");
   if (isProd && !adminTotpSecret) throw new EnvError("totp_required_in_production");
+  if (isDeployed && adminTotpSecret) {
+    const norm = adminTotpSecret.replace(/\s+/g, "").toUpperCase();
+    if (DENIED_TOTP_SECRETS.some((d) => norm === d || norm.startsWith(d))) throw new EnvError("totp_secret_denied");
+  }
 
   // ---- the rest ----
   const fakeNow = devDefaults ? val(src, "FAKE_NOW") : null; // preview ignores it, production refused it above

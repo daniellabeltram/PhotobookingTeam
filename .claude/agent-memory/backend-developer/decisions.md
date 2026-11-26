@@ -22,3 +22,17 @@
 - `shared/schemas/booking.ts` accepts a public session type (null `extraPersonFeeCents`/`maxPeople`) as well as the config type.
 - Left out on purpose (not in api.md): "sign out everywhere" endpoint (guard already checks `auth/sessions-valid-after`), "Retention due" flag (L5).
 - Log keys allowed: requestId, fn, route, status, code, bookingId, durationMs, count, reason, driver, kind, honeypot, providerStatus, errorName, rule (+ level, msg, ts).
+
+## 2026-11-26 (code review should-fix S1-S6, security review H-1, L-1, L-2, L-4, M-1)
+- **Ledger healing:** `prune` also re-checks VERIFIED entries once they are ~1 day old (stamped `checkedAt`, then once a day) against the booking's
+  status and start; stale ones are dropped and their mini slot freed. Release paths use `releaseWithRetries` (3 rounds with backoff).
+- **CAS retries:** `LEDGER_TRIES` = 10, backoff 20-80 ms x1.5 per attempt, capped at 600 ms. 10 tries cannot guarantee N > 10 writers on one day
+  all win: a 16-parallel launch may still see 503 BUSY for some, which clients retry with the same key (tested).
+- **Same start, new length** reschedule: if the booking write fails the OLD ledger entry is put back.
+- **Create path:** email send timeout 3.5 s (`CREATE_SEND_TIMEOUT_MS`, admin paths 10 s); a timeout is "failed, flagged". Ledgers loaded for date +-14 days only.
+  Idempotency replay is checked BEFORE the rate limit (body read first, size capped). `noteBooking`/`finish` failures after the commit are logged, never a 5xx.
+- **Session secrets:** preview/production need `/^[A-Za-z0-9_-]{43,}$/` and not on `DENIED_SESSION_SECRETS` (netlify/lib/env.ts). A guard test scans the repo
+  for `SECRET = "..."` literals: a new test secret must be added to the deny-list or generated at run time. TOTP: `DENIED_TOTP_SECRETS` (public example + prefix).
+- **L-4:** a platform context other than `dev` refuses APP_ENV local/test.
+- **M-1:** `locationText()` returns "the location you gave us" for client-typed locations (emails and .ics). Preset labels print. The client's own 201 screen still shows their text.
+- **L-2:** `idem/` records store the 201 WITHOUT `locationLabel` (re-filled from the booking on replay). Delete client data purges the booking's `idem/` records and any older than 48 h.

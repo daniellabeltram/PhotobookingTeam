@@ -9,16 +9,31 @@ import { generateReference } from "../../shared/reference";
 import { buildBookingSchema } from "../../shared/schemas/booking";
 import { getCatalogue, getSessionType } from "../lib/config";
 import { createBooking } from "../lib/domain/create-booking";
-import { createResponse } from "../lib/domain/views";
+import { createResponse, locationLabel } from "../lib/domain/views";
 import { CREATE_SEND_TIMEOUT_MS, sendBookingEmails } from "../lib/email/notify";
 import { HttpError } from "../lib/errors";
 import { defineFunction, dispatch, fieldErrors, json, readJsonBody, validationFailed, type RequestContext } from "../lib/http";
 import { claim, finish, hashBody, noteBooking, peekReplay, release, type IdemRecord } from "../lib/idempotency";
+import type { Services } from "../lib/services";
 import { hashIp } from "../lib/ip";
 import { log } from "../lib/log";
 import { getBooking } from "../lib/repos/bookings";
 
 const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+/**
+ * What is stored for a replay: the 201 without the location text (the client's own words, possibly an address).
+ * A replay puts the label back from the booking, so idem/ records hold no personal details (review L-2).
+ */
+const forStorage = (data: CreateBookingData): Omit<CreateBookingData, "locationLabel"> => {
+  const { locationLabel: _dropped, ...rest } = data;
+  return rest;
+};
+async function rehydrate(svc: Services, stored: unknown): Promise<unknown> {
+  const body = stored as Omit<CreateBookingData, "locationLabel">;
+  const booking = body?.reference ? await getBooking(svc.store, body.reference) : null;
+  return { ...body, locationLabel: booking ? locationLabel(booking) : "" };
+}
 
 /** A believable 201 for a filled honeypot. Nothing is stored or sent (story 017 #2). */
 function fakeResponse(rc: RequestContext, body: Record<string, unknown>): CreateBookingData {
@@ -69,7 +84,7 @@ async function create(req: Request, rc: RequestContext): Promise<Response> {
     const replay = await peekReplay(svc.store, svc.clock, key, requestHash);
     if (replay) {
       log("info", "idempotent replay", { requestId: rc.requestId, reason: "idempotent_replay" });
-      return json(replay.status, replay.body);
+      return json(replay.status, await rehydrate(svc, replay.body));
     }
   }
 
@@ -99,7 +114,7 @@ async function create(req: Request, rc: RequestContext): Promise<Response> {
   switch (claimed.kind) {
     case "replay":
       log("info", "idempotent replay", { requestId: rc.requestId, reason: "idempotent_replay" });
-      return json(claimed.status, claimed.body);
+      return json(claimed.status, await rehydrate(svc, claimed.body));
     case "mismatch":
       throw new HttpError("IDEMPOTENCY_KEY_REUSED", "That request key was already used with different answers. Please start the booking again.");
     case "in_progress":
@@ -108,7 +123,7 @@ async function create(req: Request, rc: RequestContext): Promise<Response> {
       const existing = await getBooking(svc.store, claimed.bookingId);
       if (existing) {
         const data = createResponse(existing, existing.emails.booking_received?.status === "sent" || existing.emails.request_received?.status === "sent", config.scheduling);
-        await finish(svc.store, key, { state: "pending", requestHash, createdAt: svc.clock.now() }, 201, data);
+        await finish(svc.store, key, { state: "pending", requestHash, createdAt: svc.clock.now() }, 201, forStorage(data));
         return json(201, data);
       }
       break;
@@ -148,7 +163,7 @@ async function create(req: Request, rc: RequestContext): Promise<Response> {
     }
 
     const data = createResponse(booking, emailSent, config.scheduling);
-    await finish(svc.store, key, rec, 201, data).catch(() => log("warn", "idempotency finish failed", { requestId: rc.requestId, bookingId: booking.id, reason: "store_error" }));
+    await finish(svc.store, key, rec, 201, forStorage(data)).catch(() => log("warn", "idempotency finish failed", { requestId: rc.requestId, bookingId: booking.id, reason: "store_error" }));
     return json(201, data);
   } catch (err) {
     if (!committed) await release(svc.store, key).catch(() => undefined);

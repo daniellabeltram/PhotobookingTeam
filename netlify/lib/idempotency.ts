@@ -88,3 +88,22 @@ export async function finish(store: KvStore, rawKey: string, rec: IdemRecord, st
 export async function release(store: KvStore, rawKey: string): Promise<void> {
   await store.delete(idemKey(rawKey));
 }
+
+/**
+ * Removes the idempotency records of one booking (delete client data) and any record older than 48 hours.
+ * The stored body holds no personal details (the location text is dropped before storing), so this is belt and braces.
+ */
+export async function purgeIdempotency(store: KvStore, clock: Clock, bookingId: string): Promise<number> {
+  let removed = 0;
+  const now = Date.parse(clock.now());
+  for (const key of await store.list("idem/")) {
+    const rec = (await store.get<IdemRecord>(key))?.value;
+    if (!rec) continue;
+    const ref = (rec.body as { reference?: string } | undefined)?.reference;
+    if (rec.bookingId === bookingId || ref === bookingId || now - Date.parse(rec.createdAt) > 2 * EXPIRY_MS) {
+      await store.delete(key);
+      removed++;
+    }
+  }
+  return removed;
+}
