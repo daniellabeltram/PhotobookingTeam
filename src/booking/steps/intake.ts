@@ -6,6 +6,7 @@ import { orderedErrorKeys, type FieldErrors } from '../validation';
 import { createForm } from '../intake/form';
 import { aboutYou, notes, yourSession } from '../intake/common';
 import { extraSections } from '../intake/extras';
+import { updateIntake } from '../flow-state';
 import type { FlowCtx } from '../context';
 
 const LABELS: Record<string, string> = {
@@ -23,6 +24,11 @@ const LABELS: Record<string, string> = {
 export function renderIntakeStep(ctx: FlowCtx): HTMLElement {
   const type = ctx.type;
   if (!type || !ctx.state.slot) return h('div');
+  // Events: the start time picked in step 2 prefills the event start (only when still empty).
+  if (type.intakeExtraFields.some((f) => f.id === 'events.eventStartTime') && !ctx.state.intake['events.eventStartTime']) {
+    const start = ctx.state.slot.localTime;
+    ctx.update((s) => updateIntake(s, { 'events.eventStartTime': start }));
+  }
   const form = createForm(ctx, type);
   const summary = h('div', { tabindex: '-1', class: 'error-summary' });
   const root = h('div', null, backRow(ctx, 2), progress(3), summaryStrip(`${type.name} · ${slotShort(ctx.state.slot)}`, () => ctx.go(2)), stepHeading('Tell us about your session'));

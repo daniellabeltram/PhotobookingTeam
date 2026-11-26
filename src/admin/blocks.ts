@@ -29,7 +29,7 @@ export function renderBlocks(main: HTMLElement): void {
   const end = textField({ id: 'b-end', label: 'End time', type: 'time' });
   const times = h('div', { hidden: true }, start.root, end.root);
   allDayBox.addEventListener('change', () => { times.hidden = allDayBox.checked; });
-  const label = textField({ id: 'b-label', label: 'Reason', optional: true, maxlength: 100, help: 'Only you can see this.' });
+  const label = textField({ id: 'b-label', label: 'Reason (optional, private)', maxlength: 100, help: 'Only you can see this.' });
   const submit = h('button', { type: 'submit', class: 'btn btn-primary btn-block' }, 'Block these dates');
   const errors = h('div', { role: 'alert' });
   let busy = false;

@@ -48,7 +48,7 @@ export function renderPoliciesStep(ctx: FlowCtx): HTMLElement {
   const box = h('input', { type: 'checkbox', id: checkId, checked: ctx.state.policyAccepted });
   box.setAttribute('aria-describedby', errId);
   const honeypot = h('input', { type: 'text', name: 'website', tabindex: '-1', autocomplete: 'off' });
-  const label = request(t.bookingMode);
+  const label = submitLabel(t);
   const submit = h('button', { type: 'button', class: 'btn btn-primary btn-block' }, label);
   let sending = false;
 
@@ -210,8 +210,9 @@ export function renderPoliciesStep(ctx: FlowCtx): HTMLElement {
   return root;
 }
 
-function request(mode: 'instant' | 'request'): string {
-  return mode === 'request' ? 'Send my request' : 'Book my session';
+function submitLabel(t: { bookingMode: 'instant' | 'request'; kind: 'standard' | 'mini' }): string {
+  if (t.bookingMode === 'request') return 'Send my request';
+  return t.kind === 'mini' ? 'Book my mini' : 'Book my session';
 }
 
 function afterNote(ctx: FlowCtx): string {

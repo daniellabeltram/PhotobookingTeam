@@ -1,8 +1,10 @@
 # Bugs found by QA (v1 release candidate, branch feature/v1)
 
-Run: 2026-11-26, FAKE_NOW 2026-12-01. Four open product bugs, all minor or cosmetic. Each is caught by a soft assertion in the e2e suite, so the test fails until it is fixed (tests were not weakened).
+Run: 2026-11-26, FAKE_NOW 2026-12-01. BUG-1 is closed (by design). Three open product bugs (BUG-2 to BUG-4), all minor or cosmetic. Each is caught by a soft assertion in the e2e suite, so the test fails until it is fixed (tests were not weakened).
 
-## BUG-1
+## BUG-1  Closed — by design (orchestrator, 2026-11-26)
+In v1 the .ics goes by email only and the API intentionally returns no calendarUrl. The e2e now asserts the confirmation screen has NO "Add to calendar" and that the confirmation email has the .ics.
+
 **Title:** Confirmation screen has no "Add to calendar" button for instant bookings
 **Severity:** minor
 **Env:** feature/v1, phone 375x812 and desktop 1280x800, Chromium

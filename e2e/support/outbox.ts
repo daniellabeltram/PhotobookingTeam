@@ -20,3 +20,15 @@ function walk(d: string): string[] {
 export function emailsMentioning(needle: string): { file: string; text: string }[] {
   return walk(dir()).map((file) => ({ file, text: readFileSync(file, "utf8") })).filter((e) => e.text.includes(needle));
 }
+
+/** .ics attachments written for emails of `kind` (e.g. "booking_received", "request_received") about `reference`. */
+export function icsFor(reference: string, kind: string): string[] {
+  return walk(dir())
+    .filter((f) => f.includes(reference) && f.includes(`${kind}/`) && f.endsWith(".ics"))
+    .map((f) => readFileSync(f, "utf8"));
+}
+
+/** Email folders for `reference` and `kind`, whether or not they carry an attachment. */
+export function emailFolders(reference: string, kind: string): string[] {
+  return [...new Set(walk(dir()).filter((f) => f.includes(reference) && f.includes(`${kind}/`)).map((f) => f.slice(0, f.lastIndexOf("/"))))];
+}

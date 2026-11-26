@@ -127,3 +127,16 @@ describe('BookingApp persistence', () => {
     expect(window.sessionStorage.getItem('dbp.confirmation.v1')).toBeNull();
   });
 });
+
+describe('Events start time prefill', () => {
+  it('prefills the event start time from the chosen slot on the intake step', async () => {
+    const { renderIntakeStep } = await import('../../../src/booking/steps/intake');
+    const { events } = await import('./fixtures');
+    const ctx = fakeCtx();
+    ctx.update(() => selectSlot(selectSessionType(initialState(), events).state, slot, slot.localDate));
+    (ctx as unknown as { type: typeof events }).type = events;
+    const el = renderIntakeStep(ctx);
+    expect(ctx.state.intake['events.eventStartTime']).toBe('15:00');
+    expect((el.querySelector('input[type=time]') as HTMLInputElement).value).toBe('15:00');
+  });
+});

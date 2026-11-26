@@ -2,7 +2,7 @@
 import { test, expect } from "@playwright/test";
 import { acceptPolicies, reachPoliciesStep, submitBooking } from "./support/flow";
 import { adminApi, ensureMiniDay } from "./support/admin";
-import { emailsMentioning } from "./support/outbox";
+import { emailFolders, emailsMentioning, icsFor } from "./support/outbox";
 import { TYPE_NAMES, CLIENT, type TypeKey } from "../tests/helpers/seed";
 
 const INSTANT: TypeKey[] = ["portraits", "couples", "families"];
@@ -18,11 +18,20 @@ test.describe("Booking happy paths", () => {
       const ref = (await page.getByText(/DBP-[A-Z0-9]{6}/).first().innerText()).match(/DBP-[A-Z0-9]{6}/)![0];
       await expect(page.getByText(/Eastern Time/).first()).toBeVisible();
       await expect(page.getByRole("link", { name: /Pay my retainer/ }).or(page.getByRole("button", { name: /Pay my retainer/ }))).toBeVisible();
-      await expect.soft(page.getByRole("button", { name: /Add to calendar/ }).or(page.getByRole("link", { name: /Add to calendar/ })), "Add to calendar on the confirmation screen").toBeVisible();
+      // By design (orchestrator ruling 2026-11-26): in v1 the calendar file goes by email only.
+      await expect(page.getByRole("button", { name: /Add to calendar/ })).toHaveCount(0);
+      await expect(page.getByRole("link", { name: /Add to calendar/ })).toHaveCount(0);
       // 375px: no horizontal scroll (story 019 #2, 007 #7)
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
       // Email written to the outbox with the same reference.
       await expect.poll(() => emailsMentioning(ref).length, { message: "client + admin emails in outbox" }).toBeGreaterThanOrEqual(1);
+      // The confirmation email carries the .ics (story 008 #3).
+      await expect.poll(() => icsFor(ref, "booking_received").length, { message: "booking_received email has an .ics attachment" }).toBe(1);
+      const ics = icsFor(ref, "booking_received")[0]!;
+      expect(ics).toContain("BEGIN:VCALENDAR");
+      expect(ics).toContain("BEGIN:VEVENT");
+      expect(ics).toContain(ref);
+      expect(ics).toMatch(/DTSTART/);
     });
   }
 
@@ -40,6 +49,9 @@ test.describe("Booking happy paths", () => {
     await expect(page.getByText(/held for \d+ hours/i)).toHaveCount(0);
     const ref = (await page.getByText(/DBP-[A-Z0-9]{6}/).first().innerText()).match(/DBP-[A-Z0-9]{6}/)![0];
     await expect.poll(() => emailsMentioning(ref).some((e) => /event request/i.test(e.text))).toBe(true);
+    // A request email has no .ics (story 020 #5).
+    expect(emailFolders(ref, "request_received").length).toBeGreaterThanOrEqual(1);
+    expect(icsFor(ref, "request_received")).toHaveLength(0);
   });
 
   test("Holiday Minis: short form, books a mini slot", async ({ page, request, baseURL }) => {
