@@ -49,7 +49,7 @@ export async function pickFirstDayAndTime(page: Page): Promise<string> {
 export async function fillAbout(page: Page, over: Partial<typeof CLIENT> = {}) {
   const c = { ...CLIENT, ...over };
   await page.getByLabel("Full name").fill(c.fullName);
-  await page.getByLabel("Email", { exact: true }).fill(c.email);
+  await page.getByRole("textbox", { name: "Email" }).fill(c.email);
   await page.getByLabel("Mobile phone").fill(c.phone);
 }
 

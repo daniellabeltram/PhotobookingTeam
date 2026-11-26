@@ -38,7 +38,7 @@ test.describe("Booking errors", () => {
     await pickFirstDayAndTime(page);
     await page.getByRole("button", { name: "Continue" }).click();
 
-    await page.getByLabel("Email", { exact: true }).fill("not-an-email");
+    await page.getByRole("textbox", { name: "Email" }).fill("not-an-email");
     await page.getByLabel("Mobile phone").fill("123");
     await page.getByRole("button", { name: "Continue" }).click();
 
@@ -47,7 +47,7 @@ test.describe("Booking errors", () => {
     await expect(page.getByText("Please enter your name.")).toBeVisible();
     await expect(page.getByText("That email doesn't look right. Check for typos.")).toBeVisible();
     await expect(page.getByText(/Please enter a phone number we can reach/)).toBeVisible();
-    await expect(page.getByLabel("Email", { exact: true })).toHaveAttribute("aria-invalid", "true");
+    await expect(page.getByRole("textbox", { name: "Email" })).toHaveAttribute("aria-invalid", "true");
     await expect(page.getByRole("heading", { level: 1, name: "Tell us about your session" })).toBeVisible();
     // Summary links jump to the field
     await summary.getByRole("link").first().click();

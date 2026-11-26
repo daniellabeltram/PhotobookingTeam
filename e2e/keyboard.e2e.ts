@@ -49,7 +49,7 @@ test("keyboard-only: book a Portraits session end to end, focus always visible",
   await expect(page.getByRole("heading", { level: 1, name: "Tell us about your session" })).toBeFocused();
   await tabTo(page, page.getByLabel("Full name"), "Full name");
   await page.keyboard.type(CLIENT.fullName);
-  await tabTo(page, page.getByLabel("Email", { exact: true }), "Email");
+  await tabTo(page, page.getByRole("textbox", { name: "Email" }), "Email");
   await page.keyboard.type(CLIENT.email);
   await tabTo(page, page.getByLabel("Mobile phone"), "Mobile phone");
   await page.keyboard.type(CLIENT.phone);
