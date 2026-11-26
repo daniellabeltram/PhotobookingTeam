@@ -165,7 +165,6 @@ Use this for a client's request or a weather move. It keeps the same booking and
 
 The history on the booking records the old time, the new time, the reason and who made the change.
 
-> *Developers: reschedule is planned as Priority P1. If it isn't in this release, use cancel with the note "Rescheduled" and ask the client to book again.* `[CONFIRM before release]`
 
 **If something goes wrong**
 - *"That time was just booked."* Someone booked it a moment before you. Pick another time. The list of times refreshes.

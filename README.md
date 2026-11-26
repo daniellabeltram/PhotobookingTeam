@@ -46,7 +46,7 @@ You need **Node 22** (version 22.18 or newer, below 23). You don't need any acco
    ```bash
    cp .env.example .env
    ```
-4. Set a local admin password. Run this command and type a passphrase of at least 14 characters:
+4. *Optional:* on your own computer you can skip steps 4 and 5. With no `.env` values, local mode signs in with `admin@example.test` and the passphrase `dev-passphrase-change-me`. These built-in practice values are refused on Netlify. To use your own local password instead, run this command and type a passphrase of at least 14 characters:
    ```bash
    npm run admin:hash
    ```
