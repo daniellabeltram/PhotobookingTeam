@@ -31,13 +31,7 @@ jobs:
       - run: npm audit --audit-level=high
       - run: npm run build
       - name: Scan dist for secrets and source maps
-        run: |
-          if grep -rIlE 'ADMIN_|RESEND|\bre_[A-Za-z0-9]{20,}' dist; then
-            echo "dist contains a secret-looking name or key (ADMIN_, RESEND or a Resend key)"; exit 1
-          fi
-          if find dist -name '*.map' | grep -q .; then
-            echo "dist contains a source map"; exit 1
-          fi
+        run: bash scripts/scan-dist.sh dist
 
   e2e:
     name: Playwright (chromium, optional)

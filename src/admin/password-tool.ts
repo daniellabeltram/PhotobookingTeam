@@ -38,7 +38,7 @@ function run(main: HTMLElement): void {
       pass.control.value = '';
       confirm.control.value = '';
       clear(hashOut);
-      hashOut.append(outputBlock('Your password hash', hash, 'In Netlify, open Site configuration, then Environment variables. Paste this as ADMIN_PASSWORD_HASH, then trigger a deploy. It only takes effect after the next deploy.'));
+      hashOut.append(outputBlock('Your password hash', hash, 'In Netlify, open Site configuration, then Environment variables. Paste this as the admin password hash variable (its exact name is in the README), then trigger a deploy. It only takes effect after the next deploy.'));
     } finally {
       make.removeAttribute('aria-disabled');
       make.textContent = 'Make my password hash';
@@ -51,7 +51,7 @@ function run(main: HTMLElement): void {
     const secret = generateTotpSecret();
     clear(totpOut);
     totpOut.append(
-      outputBlock('Your authenticator secret', secret, 'Add it to your authenticator app by choosing "Enter a setup key". Then paste it in Netlify as ADMIN_TOTP_SECRET and trigger a deploy.'),
+      outputBlock('Your authenticator secret', secret, 'Add it to your authenticator app by choosing "Enter a setup key". Then paste it in Netlify as the admin authenticator secret variable (its exact name is in the README) and trigger a deploy.'),
       outputBlock('Or use this setup link', otpauthUri(secret, account.control.value.trim()), 'Some apps can open this link directly.'),
     );
   });
