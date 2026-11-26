@@ -135,6 +135,8 @@ export interface LedgerEntry {
   miniSlotId: string | null;
   createdAt: string;
   verified: boolean;
+  /** Last time a verified entry was re-checked against its booking (stale entries are dropped after about a day). */
+  checkedAt?: string;
 }
 
 export interface MiniSlot {

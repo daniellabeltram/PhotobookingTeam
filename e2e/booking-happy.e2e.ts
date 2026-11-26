@@ -18,7 +18,7 @@ test.describe("Booking happy paths", () => {
       const ref = (await page.getByText(/DBP-[A-Z0-9]{6}/).first().innerText()).match(/DBP-[A-Z0-9]{6}/)![0];
       await expect(page.getByText(/Eastern Time/).first()).toBeVisible();
       await expect(page.getByRole("link", { name: /Pay my retainer/ }).or(page.getByRole("button", { name: /Pay my retainer/ }))).toBeVisible();
-      await expect(page.getByRole("button", { name: /Add to calendar/ }).or(page.getByRole("link", { name: /Add to calendar/ }))).toBeVisible();
+      await expect.soft(page.getByRole("button", { name: /Add to calendar/ }).or(page.getByRole("link", { name: /Add to calendar/ })), "Add to calendar on the confirmation screen").toBeVisible();
       // 375px: no horizontal scroll (story 019 #2, 007 #7)
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
       // Email written to the outbox with the same reference.

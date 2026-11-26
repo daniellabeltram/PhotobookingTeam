@@ -64,6 +64,17 @@ export async function claim(store: KvStore, clock: Clock, rawKey: string, reques
   return { kind: "in_progress" };
 }
 
+/**
+ * The stored 201 for this key and body, without claiming anything. Used BEFORE the rate limit, so a client that
+ * retries a booking that already went through gets its confirmation back instead of a 429.
+ */
+export async function peekReplay(store: KvStore, clock: Clock, rawKey: string, requestHash: string): Promise<{ status: number; body: unknown } | null> {
+  const cur = await store.get<IdemRecord>(idemKey(rawKey));
+  if (!cur || cur.value.state !== "done" || cur.value.requestHash !== requestHash) return null;
+  if (Date.parse(clock.now()) - Date.parse(cur.value.createdAt) > EXPIRY_MS) return null;
+  return { status: cur.value.status ?? 201, body: cur.value.body };
+}
+
 export async function noteBooking(store: KvStore, rawKey: string, etag: string, rec: IdemRecord, bookingId: string): Promise<string> {
   const res = await store.set(idemKey(rawKey), { ...rec, bookingId }, { onlyIfMatch: etag });
   return res.ok ? res.etag : etag;

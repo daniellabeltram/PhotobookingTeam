@@ -37,6 +37,18 @@ keep notes at threat-model level, no exploit recipes for unfixed issues, never a
   q= in URLs, password tool CSP, iteration bounds, childrenAges optional, IPv6 /64 bucketing.
 - Detail lives in the T-007 handoff (orchestrator has it); board task T-007.
 
+## Pre-release code review 2026-11-26 (v1, feature/v1): verdict BLOCK, one item
+- Verified in code: H1, H3, M1, M2, M3 (code), M4, L2-L4, L6, L9; admin guard on every admin
+  function with a config-derived path x method 401 test; bundle has no secrets or maps; public
+  endpoints return no other clients' data; history scan found no real keys. npm audit: 0.
+- Open (High, blocks): H2 is only partly done. Deployed-context secret validation must reject
+  every secret-shaped literal that exists anywhere in this public repo (dev defaults, test and e2e
+  seeds), not only placeholder words. Re-check this first on re-review.
+- Open (Medium/Low): client-typed free text still reaches outbound client email/.ics (relay);
+  idempotency replay records keep a copy of booking output beyond "delete client data"; CI dist
+  scan pattern collides with the password tool's help text (fix the text, never loosen the scan).
+- Not built (known): L5 retention flag, "sign out everywhere" UI (valid-after check exists).
+
 ## Accepted risks (need Daniella's OK, dated)
 - (none yet) Candidates awaiting her answer: TOTP optional in prod; no automatic hold expiry in v1
   (she chose manual 2026-11-25, security impact = calendar lock-up by bots); full intake in her
@@ -46,6 +58,10 @@ keep notes at threat-model level, no exploit recipes for unfixed issues, never a
 - 2026-11-25: guards keyed only on APP_ENV fail open when APP_ENV itself is misconfigured. Always
   ask "what if this env var is wrong or missing?" and prefer platform-provided signals.
 - 2026-11-25: "fail open" rate limits are fine for booking spam, never for login.
+- 2026-11-26: "reject placeholders" rules miss realistic-looking dev/test values. In a public repo
+  every literal secret is public: deny-list them by value and require the documented format.
+- 2026-11-26: probe env guards by running readEnv directly (node --experimental-strip-types on a
+  scratch copy); vitest with --root / hangs.
 - 2026-11-25: @netlify/blobs 11.1.11 pulls ~60 transitive packages, but the native keyring and
   dev-utils chain is only reachable via `@netlify/blobs/server` (local emulator). The functions must
   import only the main entry. npm audit on the proposed tree: 0 vulnerabilities (237 packages).

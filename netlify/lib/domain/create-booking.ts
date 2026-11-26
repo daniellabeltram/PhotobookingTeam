@@ -13,7 +13,7 @@ import type { Services } from "../services";
 import { nearestAlternatives } from "./alternatives";
 import { computeAvailability } from "./availability";
 import { releaseEntry, reserveSlot } from "./reserve";
-import { loadWorld, loadWorldForType } from "./world";
+import { loadWorld } from "./world";
 
 const blank = (v: unknown): v is null | undefined | "" => v === undefined || v === null || v === "";
 const orNull = <T>(v: T | null | undefined | ""): T | null => (blank(v) ? null : v);
@@ -64,7 +64,7 @@ export async function createBooking(
   // 7. Server-side rules: the time must be an open slot right now
   const durationMin = type.durationOptionsMin ? (parsed.durationMin as number) : type.durationMin;
   const date = etDateOf(parsed.startUtc);
-  const world = await loadWorldForType(svc, type, addDays(date, -14), addDays(date, 14));
+  const world = await loadWorld(svc, addDays(date, -14), addDays(date, 14));
   const avail = computeAvailability({
     config,
     type,

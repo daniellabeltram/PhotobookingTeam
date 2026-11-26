@@ -85,7 +85,15 @@ export async function fillIntake(page: Page, type: TypeKey) {
     await page.getByLabel("On-site contact name").fill("Pat Planner");
     await page.getByLabel("On-site contact phone").fill("5615550100");
     // Start prefilled from step 2; end time is ours to set (2 hours later is checked by the server rules).
-    const start = await page.getByLabel("Start time").inputValue();
+    let start = await page.getByLabel("Start time").inputValue();
+    // Design: step 2's chosen time prefills the start time. Soft-assert (real bug if empty), then continue the flow.
+    expect.soft(start, "Events start time should be prefilled from step 2 (booking-flow.md step 3)").not.toBe("");
+    if (!start) {
+      const strip = (await page.getByText(/ET$/).first().innerText()).match(/(\d{1,2}):(\d{2}) (AM|PM) ET/);
+      const hh = (Number(strip?.[1] ?? 9) % 12) + (strip?.[3] === "PM" ? 12 : 0);
+      start = `${String(hh).padStart(2, "0")}:${strip?.[2] ?? "00"}`;
+      await page.getByLabel("Start time").fill(start);
+    }
     const [h = 0, m = 0] = start.split(":").map(Number);
     const end = `${String((h + 2) % 24).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
     await page.getByLabel("End time").fill(end);

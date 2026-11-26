@@ -1,7 +1,7 @@
 // Atomic slot reservation (ADR 0002): one compare-and-swap on the day ledger.
 import type { Clock } from "../../../shared/datetime";
 import type { LedgerEntry } from "../../../shared/models";
-import { mutateLedger } from "../repos/ledger";
+import { mutateLedger, sleepBackoff } from "../repos/ledger";
 import type { KvStore } from "../store/kv";
 import { entryInterval, gapConflict, miniSlotInterval } from "./overlap";
 
@@ -73,4 +73,27 @@ export async function releaseEntry(
     return changed ? { write: ledger, result: true } : { result: true };
   });
   return outcome.ok;
+}
+
+/**
+ * releaseEntry with extra rounds, for the paths where a failed release would leave a hold behind (cancel, decline,
+ * complete, reschedule). Each round already retries the CAS; this adds a pause and another round.
+ */
+export async function releaseWithRetries(
+  store: KvStore,
+  clock: Clock,
+  date: string,
+  bookingId: string,
+  startUtc?: string,
+  rounds = 3,
+): Promise<boolean> {
+  for (let i = 0; i < rounds; i++) {
+    try {
+      if (await releaseEntry(store, clock, date, bookingId, startUtc)) return true;
+    } catch {
+      /* a store error counts as a failed round */
+    }
+    if (i < rounds - 1) await sleepBackoff(i + 2);
+  }
+  return false;
 }

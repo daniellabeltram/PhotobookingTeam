@@ -10,10 +10,10 @@ import { buildBookingSchema } from "../../shared/schemas/booking";
 import { getCatalogue, getSessionType } from "../lib/config";
 import { createBooking } from "../lib/domain/create-booking";
 import { createResponse } from "../lib/domain/views";
-import { sendBookingEmails } from "../lib/email/notify";
+import { CREATE_SEND_TIMEOUT_MS, sendBookingEmails } from "../lib/email/notify";
 import { HttpError } from "../lib/errors";
 import { defineFunction, dispatch, fieldErrors, json, readJsonBody, validationFailed, type RequestContext } from "../lib/http";
-import { claim, finish, hashBody, noteBooking, release, type IdemRecord } from "../lib/idempotency";
+import { claim, finish, hashBody, noteBooking, peekReplay, release, type IdemRecord } from "../lib/idempotency";
 import { hashIp } from "../lib/ip";
 import { log } from "../lib/log";
 import { getBooking } from "../lib/repos/bookings";
@@ -59,6 +59,20 @@ async function create(req: Request, rc: RequestContext): Promise<Response> {
   const { svc } = rc;
   const { config } = svc;
 
+  // 1. Body (size capped before parsing)
+  const body = await readJsonBody(req);
+  const key = req.headers.get("idempotency-key")?.trim() ?? "";
+  const requestHash = hashBody(body);
+
+  // A retry of a booking that already went through gets its stored 201, even from a visitor who is now rate limited
+  if (UUID_V4.test(key)) {
+    const replay = await peekReplay(svc.store, svc.clock, key, requestHash);
+    if (replay) {
+      log("info", "idempotent replay", { requestId: rc.requestId, reason: "idempotent_replay" });
+      return json(replay.status, replay.body);
+    }
+  }
+
   // 2. Rate limit per visitor
   if (!svc.env.rateLimitDisabled) {
     const take = await svc.limiter.take("booking", hashIp(rc.ip, svc.env.adminSessionSecret), config.limits.bookingRateLimit);
@@ -73,17 +87,14 @@ async function create(req: Request, rc: RequestContext): Promise<Response> {
     }
   }
 
-  // 1/3. Body, then honeypot
-  const body = await readJsonBody(req);
+  // 3. Honeypot
   if (typeof body.website === "string" && body.website.trim() !== "") {
     log("info", "honeypot", { requestId: rc.requestId, honeypot: 1, reason: "honeypot" });
     return json(201, fakeResponse(rc, body));
   }
 
   // 4. Idempotency
-  const key = req.headers.get("idempotency-key")?.trim() ?? "";
   if (!UUID_V4.test(key)) throw validationFailed({ "header.idempotencyKey": "An Idempotency-Key header (a UUID v4) is required" });
-  const requestHash = hashBody(body);
   const claimed = await claim(svc.store, svc.clock, key, requestHash);
   switch (claimed.kind) {
     case "replay":
@@ -120,21 +131,24 @@ async function create(req: Request, rc: RequestContext): Promise<Response> {
     // 6-9. Policy, rules, reserve, store
     const booking = await createBooking(svc, parsed.data, type);
     committed = true;
-    if (claimed.kind === "claimed") await noteBooking(svc.store, key, claimed.etag, rec, booking.id);
+    // From here on the booking exists: bookkeeping problems are logged, never turned into an error for the client.
+    if (claimed.kind === "claimed") {
+      await noteBooking(svc.store, key, claimed.etag, rec, booking.id).catch(() => log("warn", "idempotency note failed", { requestId: rc.requestId, bookingId: booking.id, reason: "store_error" }));
+    }
     log("info", "booking created", { requestId: rc.requestId, bookingId: booking.id, status: 201, reason: "created", kind: booking.status });
 
     // 10. Emails after the commit. A failure is recorded on the booking and never undoes it.
     const clientKind: ClientEmailKind = booking.status === "requested" ? "request_received" : "booking_received";
     let emailSent = false;
     try {
-      const { outcomes } = await sendBookingEmails(svc, booking.id, [clientKind, "admin_new_booking"]);
+      const { outcomes } = await sendBookingEmails(svc, booking.id, [clientKind, "admin_new_booking"], { timeoutMs: CREATE_SEND_TIMEOUT_MS });
       emailSent = outcomes[clientKind] === "sent";
     } catch {
       log("warn", "email step failed", { requestId: rc.requestId, bookingId: booking.id, reason: "email_failed" });
     }
 
     const data = createResponse(booking, emailSent, config.scheduling);
-    await finish(svc.store, key, rec, 201, data);
+    await finish(svc.store, key, rec, 201, data).catch(() => log("warn", "idempotency finish failed", { requestId: rc.requestId, bookingId: booking.id, reason: "store_error" }));
     return json(201, data);
   } catch (err) {
     if (!committed) await release(svc.store, key).catch(() => undefined);

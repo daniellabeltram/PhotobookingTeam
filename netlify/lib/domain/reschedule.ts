@@ -13,7 +13,7 @@ import { updateBooking } from "../repos/bookings";
 import type { Services } from "../services";
 import { nearestAlternatives } from "./alternatives";
 import { computeAvailability } from "./availability";
-import { releaseEntry, reserveSlot } from "./reserve";
+import { releaseWithRetries, reserveSlot } from "./reserve";
 import { loadWorld } from "./world";
 
 export type RescheduleBody = z.infer<typeof rescheduleSchema>;
@@ -139,12 +139,27 @@ export async function rescheduleBooking(svc: Services, cur: Booking, body: Resch
       { expectedVersion: body.expectedVersion },
     );
   } catch (err) {
-    if (cur.startUtc !== slot.startUtc) await releaseEntry(svc.store, svc.clock, date, cur.id, slot.startUtc); // undo (a): the booking keeps its time
+    // undo (a): the booking keeps its time
+    if (cur.startUtc !== slot.startUtc) {
+      await releaseWithRetries(svc.store, svc.clock, date, cur.id, slot.startUtc);
+    } else {
+      // same start, new length: (a) replaced the entry in place, so put the OLD entry back
+      const oldEntry: LedgerEntry = {
+        ...entry,
+        endUtc: cur.endUtc,
+        busyStartUtc: cur.busyStartUtc,
+        busyEndUtc: cur.busyEndUtc,
+        createdAt: now,
+        verified: false,
+      };
+      const back = await reserveSlot(svc.store, svc.clock, { date, entry: oldEntry, maxSessionsPerDay: svc.config.scheduling.maxSessionsPerDay });
+      if (!back.ok) log("warn", "old entry not restored", { bookingId: cur.id, reason: "release_failed" });
+    }
     throw err;
   }
 
   // (c) free the old time
-  const released = cur.startUtc === slot.startUtc ? true : await releaseEntry(svc.store, svc.clock, cur.localDate, cur.id, cur.startUtc);
+  const released = cur.startUtc === slot.startUtc ? true : await releaseWithRetries(svc.store, svc.clock, cur.localDate, cur.id, cur.startUtc);
   if (!released) log("warn", "old slot not released", { bookingId: cur.id, reason: "release_failed" });
   return next;
 }

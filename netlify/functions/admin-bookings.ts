@@ -11,7 +11,7 @@ import { getCatalogue, getSessionType } from "../lib/config";
 import { flagSettings, listForAdmin } from "../lib/domain/admin-list";
 import { wipePii } from "../lib/domain/delete-pii";
 import { rescheduleBooking } from "../lib/domain/reschedule";
-import { releaseEntry } from "../lib/domain/reserve";
+import { releaseWithRetries } from "../lib/domain/reserve";
 import { applyTransition } from "../lib/domain/transitions";
 import { bookingDetail } from "../lib/domain/views";
 import { sendBookingEmails } from "../lib/email/notify";
@@ -49,7 +49,7 @@ function invalidTransition(rc: AdminContext, cur: Booking): HttpError {
 }
 
 async function releaseSlot(rc: AdminContext, b: Booking): Promise<void> {
-  const ok = await releaseEntry(rc.svc.store, rc.svc.clock, b.localDate, b.id, b.startUtc);
+  const ok = await releaseWithRetries(rc.svc.store, rc.svc.clock, b.localDate, b.id, b.startUtc);
   if (!ok) log("warn", "slot release failed", { requestId: rc.requestId, bookingId: b.id, reason: "release_failed" });
 }
 
